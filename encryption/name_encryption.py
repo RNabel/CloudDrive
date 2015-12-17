@@ -11,10 +11,11 @@ def encrypt(key, raw):
     raw = pad(raw)
     iv = Random.new().read(AES.block_size)
     cipher = AES.new(key, AES.MODE_CBC, iv)
-    return base64.b64encode(iv + cipher.encrypt(raw))
+    return base64.b64encode(iv + cipher.encrypt(raw)).replace("/", "-")
 
 
 def decrypt(key, enc):
+    enc = enc.replace("-", "/")
     enc = base64.b64decode(enc)
     iv = enc[:16]
     cipher = AES.new(key, AES.MODE_CBC, iv)

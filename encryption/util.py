@@ -11,7 +11,7 @@ def derive_key_and_iv(password, salt, key_length, iv_length):
 
 
 def create_password(password):
-    return hashlib.sha256(password).digest()
+    return hashlib.md5(password).digest()
 
 
 def get_password():
