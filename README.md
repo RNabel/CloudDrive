@@ -1,4 +1,3 @@
-
 # CloudDrive
 ## Why is CloudDrive developed?
 Even new laptops have relatively small hard drives, but there is vast amounts of space available on Google Drive (in my case ~10TB). Most software used with cloud storage copies ALL files to the computer.
