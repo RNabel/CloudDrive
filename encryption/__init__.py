@@ -19,7 +19,7 @@ def encrypt_file(file_name):
     file_out_name = name_encryption.encrypt(PASSWORD, file_base_name)
     file_out_name = TEMP_ENC_FOLDER + "/" + file_out_name
 
-    # Open encrypted output file. TODO ensure password does NOT contain a slash!
+    # Open encrypted output file.
     file_encryption.encrypt_file(PASSWORD, file_name, file_out_name)
     return file_out_name
 
@@ -30,7 +30,7 @@ def decrypt_file(name):
     file_out_name = name_encryption.decrypt(PASSWORD, file_name)
     file_out_name = TEMP_DEC_FOLDER + "/" + file_out_name
 
-    # Open encrypted output file. TODO ensure file does not exist.
+    # Open encrypted output file.
     file_encryption.decrypt_file(PASSWORD, name, file_out_name)
 
     return file_out_name
