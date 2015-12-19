@@ -1,18 +1,15 @@
 #!/usr/bin/env python
+
 from __future__ import with_statement
 
 import os
-import sys
 import errno
 
 from fuse import FUSE, FuseOSError, Operations
 
-"""
-Based on the code provided here: http://www.stavros.io/posts/python-fuse-filesystem/
-"""
 
+class Passthrough(Operations):
 
-class CloudDriveFUSE(Operations):
     def __init__(self, root):
         self.root = root
 
@@ -131,7 +128,4 @@ class CloudDriveFUSE(Operations):
 
 
 def main(mountpoint, root):
-    FUSE(CloudDriveFUSE(root), mountpoint, nothreads=True, foreground=True)
-
-if __name__ == '__main__':
-    main(sys.argv[2], sys.argv[1])
+    FUSE(Passthrough(root), mountpoint, nothreads=True, foreground=True)
