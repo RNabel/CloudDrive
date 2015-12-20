@@ -1,6 +1,10 @@
 import filesystem.fuse_endpoint
 import os
 
+# Folders used as to store local files.
+ENC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_enc_folder"
+DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
+
 
 def initialise_fuse(mount_point, content_folder):
     # Check if the mount point exists, if not create the folder.

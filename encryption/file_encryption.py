@@ -8,22 +8,22 @@ def encrypt_file(key, in_filename, out_filename=None, chunksize=64 * 1024):
     """
     Encrypts a file using AES (CBC mode) with the
     given key.
-
-    :param key:
-        The encryption key - a string that must be
+    Args:
+        key: The encryption key - a string that must be
         either 16, 24 or 32 bytes long. Longer keys
         are more secure.
-    :param in_filename:
-        Name of the input file
 
-    :param out_filename:
-        If None, '<in_filename>.enc' will be used.
+        in_filename: Name of the input file
 
-    :param chunksize:
-        Sets the size of the chunk which the function
+        out_filename: If None, '<in_filename>.enc' will be used.
+
+        chunksize: Sets the size of the chunk which the function
         uses to read and encrypt the file. Larger chunk
         sizes can be faster for some files and machines.
         chunksize must be divisible by 16.
+
+    Returns: None.
+
     """
     if not out_filename:
         out_filename = in_filename + '.enc'
@@ -48,13 +48,23 @@ def encrypt_file(key, in_filename, out_filename=None, chunksize=64 * 1024):
 
 
 def decrypt_file(key, in_filename, out_filename=None, chunksize=24 * 1024):
-    """ Decrypts a file using AES (CBC mode) with the
+    """
+    Decrypts a file using AES (CBC mode) with the
         given key. Parameters are similar to encrypt_file,
         with one difference: out_filename, if not supplied
         will be in_filename without its last extension
         (i.e. if in_filename is 'aaa.zip.enc' then
         out_filename will be 'aaa.zip')
+
+    Args:
+        key: The encryption key.
+        in_filename: The filename of the input file.
+        out_filename: The filename of the file to write the decrypted output to.
+        chunksize: The size of the chunks to decrypt at a time.
+
+    Returns: None.
     """
+
     if not out_filename:
         out_filename = os.path.splitext(in_filename)[0]
 

@@ -8,7 +8,6 @@ from collections import defaultdict
 # File structure.
 def tree():
     """
-
     Returns:
         Autovififying tree
 
@@ -23,6 +22,11 @@ fcb_list = None  # List returned by update call.
 
 # Cloud functions.
 def download_file_list():
+    """
+    Set up global variables with an update of the files stored on GDrive folder.
+    Returns:
+        None
+    """
     global fcb_list, fcb_dict
     # Download metadata of all files.
     fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
@@ -34,8 +38,15 @@ def download_file_list():
 
 
 # Conversion.
-# TODO convert into tree.
 def _get_children_from_list(parent_id):
+    """
+    Get all children of given id from file_list object.
+    Args:
+        parent_id: The id of the parent
+
+    Returns:
+        List of GoogleDriveFile
+    """
     if parent_id:
         return [x for
                 x in fcb_list
@@ -49,6 +60,17 @@ def _get_folders_from_list(file_list):
 
 
 def convert_list_to_tree(tree_node, parent_id):
+    """
+    Recursively create file_tree.
+    Args:
+        tree_node: The current root node in tree.
+        parent_id: The id of the current root folder.
+                   (note: this is not the 'root' folder of GDrive but the
+                      subfolder currently considered top of the file tree.)
+
+    Returns:
+        None
+    """
     # Get children of parents.
     children = _get_children_from_list(parent_id)
 
@@ -74,6 +96,14 @@ def get_children(identifier, isPath):
 
 
 def pretty_print_tree(tree):
+    """
+    Pretty print a nested default dictionary structure.
+    Args:
+        tree: The root of the nested dictionary.
+
+    Returns:
+        None
+    """
     pprint.pprint({k: dict(v) for k, v in dict(tree).items()})
 
 

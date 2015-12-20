@@ -8,8 +8,10 @@ import errno
 from fuse import FUSE, FuseOSError, Operations
 
 
-class Passthrough(Operations):
-
+class GDrive_Fuse(Operations):
+    """
+    Bundles all functionality of the fuse system.
+    """
     def __init__(self, root):
         self.root = root
 
@@ -128,4 +130,4 @@ class Passthrough(Operations):
 
 
 def main(mountpoint, root):
-    FUSE(Passthrough(root), mountpoint, nothreads=True, foreground=True)
+    FUSE(GDrive_Fuse(root), mountpoint, nothreads=True, foreground=True)
