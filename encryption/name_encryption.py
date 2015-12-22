@@ -15,7 +15,6 @@ def encrypt(key, raw):
         raw: String to encrypt.
 
     Returns: The encrypted string.
-
     """
     raw = pad(raw)
     iv = Random.new().read(AES.block_size)
