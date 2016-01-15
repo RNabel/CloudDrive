@@ -34,3 +34,19 @@ Options for storage:
    - [functools](https://docs.python.org/3/library/functools.html#functools.lru_cache)
  - General python cache library:
    - [HermesCache](https://pypi.python.org/pypi/HermesCache)
+
+## CLI
+
+### Commands:
+1. Sync 'cloud-drive sync'
+   1. Feedback for upload file:
+
+      `Uploading file A/B/C.xyz: [##_____], 100 KiB/s, 23:03 min`
+
+      `Encoding file A/B/C.xyz: [##_____], 10:03 min`
+
+      `Decoding file A/B/C.xyz: [##_____], 20:03 min`
+
+      `Files remaining to upload: 10, size: 30 GB, estimated time: 20 min`
+
+      `Files remaining to download: 10, size: 30 GB, estimated time: 20 min`
