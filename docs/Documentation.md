@@ -50,3 +50,7 @@ Options for storage:
       `Files remaining to upload: 10, size: 30 GB, estimated time: 20 min`
 
       `Files remaining to download: 10, size: 30 GB, estimated time: 20 min`
+
+## Encryption
+
+**Encryption mechanism**: Could use: [simple-crypt](https://pypi.python.org/pypi/simple-crypt) but limited to encrypting files which can fit into memory.

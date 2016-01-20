@@ -4,35 +4,42 @@ from control import ENC_FOLDER
 from filesystem import file_cache
 
 
-def sync_file(id):
+def sync_file(path, remote_target):
     """
     Synchronize state of file between local storage and remote storage.
     Args:
-        id: The unique id assigned by remote storage and also used by local storage.
+        remote_target: The unique id assigned by remote storage and also used by local storage.
+        path: The local file path.
 
     Returns:
         integer: 0 if successful, 1 otherwise.
     """
-    # TODO
-    # get metadata
-    # compare to newly fetched metadata
-    # upload/ download if necessary
-    pass
+
+    _upload_file(path, remote_target)
 
 
 # Helpers.
 # TODO may have to ensure this is done atomically.
 # TODO What happens if it is a new file?
-def _upload_file(id):
+def _upload_file(path, remote_target):
     """
     Upload file to remote storage.
     Args:
-        id: The unique id used locally and on remote to identify file.
+        _id: The unique id used locally and on remote to identify file.
 
     Returns:
         integer: success code.
     """
-    pass
+
+    up_file = drive.CreateFile({
+        'description': 'AN excellent file you will find to be to your liking.',
+        'parents': [
+            'root'  # insert parent folder ID here.
+        ],
+        'title': path
+    })
+    up_file.SetContentFile(path)
+    up_file.Upload()
 
 
 def _download_file(id):

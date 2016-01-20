@@ -3,7 +3,8 @@ from pydrive.drive import GoogleDrive
 
 gauth = GoogleAuth()
 # Try to load saved client credentials
-gauth.LoadCredentialsFile("mycreds.txt")
+CREDENTIALS = "/home/robin/PycharmProjects/CloudDrive/cloud_interface/mycreds.txt"
+gauth.LoadCredentialsFile(CREDENTIALS)
 if gauth.credentials is None:
     # Authenticate if they're not there
     gauth.LocalWebserverAuth()
@@ -14,6 +15,7 @@ else:
     # Initialize the saved creds
     gauth.Authorize()
 # Save the current credentials to a file
-gauth.SaveCredentialsFile("mycreds.txt")
+gauth.SaveCredentialsFile(CREDENTIALS)
 
 drive = GoogleDrive(gauth)
+
