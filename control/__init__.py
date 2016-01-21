@@ -6,8 +6,6 @@ ENC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_enc_folder"
 DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
 
 
-
-
 def initialise_fuse(mount_point, content_folder):
     # Check if the mount point exists, if not create the folder.
     if not os.path.exists(mount_point):

@@ -35,8 +35,9 @@ def print_upload_file():
         else:
             print "The path you entered does not exist. Please re-enter the path."
 
+    print "Uploading file..."
     cd.sync_file(path, None)
-    print "The file {} would be uploaded now... Success!".format(path)
+    print "The file {} was uploaded now... Success!".format(path)
 
 
 def start_cli():

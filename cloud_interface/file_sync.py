@@ -1,4 +1,5 @@
 # Code to upload and download files from Google Drive.
+import os
 from cloud_interface import drive
 from control import ENC_FOLDER
 from filesystem import file_cache
@@ -30,13 +31,14 @@ def _upload_file(path, remote_target):
     Returns:
         integer: success code.
     """
+    file_name = os.path.basename(path)
 
     up_file = drive.CreateFile({
         'description': 'AN excellent file you will find to be to your liking.',
         'parents': [
-            'root'  # insert parent folder ID here.
+            'Test_folder'  # insert parent folder ID here.
         ],
-        'title': path
+        'title': file_name
     })
     up_file.SetContentFile(path)
     up_file.Upload()
