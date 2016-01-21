@@ -35,9 +35,8 @@ def _upload_file(path, remote_target):
 
     up_file = drive.CreateFile({
         'description': 'AN excellent file you will find to be to your liking.',
-        'parents': [
-            'Test_folder'  # insert parent folder ID here.
-        ],
+        "parents": [{"kind": "drive#fileLink",
+                     "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}], # target folder id here.
         'title': file_name
     })
     up_file.SetContentFile(path)
@@ -84,4 +83,4 @@ def _fetch_all_file_info(time):
     Returns:
         List of GoogleDriveFile objects with metadata about each file.
     """
-    pass
+    return drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
