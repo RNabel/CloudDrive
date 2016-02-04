@@ -36,7 +36,7 @@ def _upload_file(path, remote_target):
     up_file = drive.CreateFile({
         'description': 'AN excellent file you will find to be to your liking.',
         "parents": [{"kind": "drive#fileLink",
-                     "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}], # target folder id here.
+                     "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}],  # target folder id here.
         'title': file_name
     })
     up_file.SetContentFile(path)
