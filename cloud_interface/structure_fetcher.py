@@ -76,7 +76,7 @@ def convert_list_to_tree(tree_node, parent_id):
 
     for child in children:
         # Add to current tree node.
-        if _is_folder(child):  # Iterative call if folder.
+        if is_folder(child):  # Iterative call if folder.
             # Store reference to folder object in special field.
             tree_node[child['id'] + "_folder"] = child
             convert_list_to_tree(tree_node[child['id']], child['id'])
@@ -84,28 +84,77 @@ def convert_list_to_tree(tree_node, parent_id):
             tree_node[child['id']] = child
 
 
-def _is_folder(file_object):
+def is_folder(file_object):
     return file_object.metadata['mimeType'] == u"application/vnd.google-apps.folder"
 
 
 # Accessor methods.
-# TODO
+# TODO in prog, not finished. needs some testing.
 def get_children(identifier, is_path):
     if is_path:
-        path = identifier.split(control.constants.FILE_PATH_SEPARATOR)
+        file_object = get_file_from_path(identifier)
+        if file_object:
+            folder_children = _get_children_from_list(file_object['id'])  # FIXME crashed after "cd .." command
+            return folder_children
+        else:
+            return []
 
-        current_folder_id = 'root'
-        path = path[1:]
-        parent_folder_children = []
+    else:
+        return _get_children_from_list(identifier)
 
-        for folder_name in path:
-            # check if folder name exists in current folder id.
-            parent_folder_children = _get_children_from_list(current_folder_id)
-            # TODO filter children by title.
 
-        return parent_folder_children
-    # Either get children based on identifier, or on path.
-    pass
+def get_file_from_path(path):
+    path = path.split(control.constants.FILE_PATH_SEPARATOR)
+
+    current_folder_id = 'root'
+    current_folder = file_tree
+    path = path[1:]
+
+    for dir_name in path:
+        # check if folder name exists in current folder id.
+        current_folder = get_file_object_from_parent(current_folder_id, dir_name)
+
+        if not current_folder:
+            return False
+        else:
+            current_folder_id = current_folder['id']
+
+    # Get all child elements of the current folder.
+    return current_folder
+
+
+def get_id_from_path(path):
+    file_obj = get_file_from_path(path)
+    return file_obj['id']
+
+
+def get_file_object_from_parent(parent_id, child_name):
+    # get children of parent_id
+    children = _get_children_from_list(parent_id)
+
+    # find child with given name
+    file_object = _get_file_from_list(children, child_name)
+
+    return file_object
+
+
+def filter_file_list(files, want_folders):
+    if want_folders:
+        return [f for f in files if f.metadata['mimeType'] == u'application/vnd.google-apps.folder']
+    else:
+        return [f for f in files if f.metadata['mimeType'] != u'application/vnd.google-apps.folder']
+
+
+def get_titles(file_list):
+    return [f['title'] for f in file_list]
+
+
+def _get_file_from_list(file_list, title):
+    for element in file_list:
+        if element['title'] == title:
+            return element
+
+    return False
 
 
 def pretty_print_tree(input_tree):
@@ -126,4 +175,5 @@ def _dicts(t): return {k: _dicts(dict(t[k])) for k in t}
 if __name__ == '__main__':
     update_metadata()
     convert_list_to_tree(file_tree, 'root')
-    pretty_print_tree(file_tree)
+    get_file_object_from_parent('root', 'Documents')
+    get_children('/Documents', True)

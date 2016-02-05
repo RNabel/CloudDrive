@@ -2,17 +2,19 @@ import os
 import sys
 import argparse
 
-from cloud_interface import file_sync as cd
+from cloud_interface import file_sync as cd, structure_fetcher as sf
+import control.constants
 
 LINE_START_LOCAL = "$l "
 LINE_START_REMOTE = "$r "
 
-current_remote_path = "/"
+current_remote_path = ""
 current_rem_dir_id = "root"
 current_local_path = os.path.expanduser("~")
 os.chdir(current_local_path)
 
 current_mode_local = True
+is_metadata_fetched = False
 
 # Mapping of commands to help text.
 available_options = {
@@ -32,7 +34,7 @@ def help_handler(user_input):
 
 
 def cd_handler(user_input):
-    global current_local_path
+    global current_local_path, current_remote_path
 
     if current_mode_local:
         if len(user_input) < 2:
@@ -52,28 +54,43 @@ def cd_handler(user_input):
             print "No such folder: {}".format(folder_name)
 
     else:
-        print "cd is not implemented for remote storage yet."
+        new_folder = " ".join(user_input[1:])
+        file_path_separator = control.constants.FILE_PATH_SEPARATOR
+        if new_folder == "..":
+            separated_path = current_remote_path.split(file_path_separator)
+            new_path = "/" + file_path_separator.join(separated_path[:-1])
+            current_remote_path = new_path
+        elif new_folder == ".":
+            pass  # do nothing as current folder.
+        else:
+            # Verify path exists.
+            new_path = current_remote_path + control.constants.FILE_PATH_SEPARATOR + new_folder
+            file_object = sf.get_file_from_path(new_path)
+
+            if file_object and sf.is_folder(file_object):
+                current_remote_path = new_path
+            else:
+                print "The specified folder does not exist!"
 
 
 def ls_handler(user_input):
     if current_mode_local:
         files = [f for f in os.listdir('.') if os.path.isfile(f)]
         folders = [f for f in os.listdir('.') if not os.path.isfile(f)]
-        output_string = ""
-        if files:
-            output_string += "Files:\n{}{}".format(" ".join(files), "\n" if folders else "")
-        if folders:
-            output_string += "Folders:\n{}".format(" ".join(folders))
-
-        print output_string
     else:
-        # Fetch all meta data from current parent.
-        metadata = cd._fetch_all_file_info(current_rem_dir_id, None)
+        children = sf.get_children(current_remote_path, True)
+        files = sf.filter_file_list(children, False)
+        files = sf.get_titles(files)
+        folders = sf.filter_file_list(children, True)
+        folders = sf.get_titles(folders)
 
-        # Find all folders. TODO use structure fetcher for this.
+    output_string = ""
+    if files:
+        output_string += u"Files:\n{}{}".format("'" + "' '".join(files) + "'", "\n" if folders else "")
+    if folders:
+        output_string += u"Folders:\n{}".format("'" + "' '".join(folders) + "'")
 
-        # Find all files.
-        print "ls entered yo in remote mode."
+    print output_string
 
 
 def pwd_handler(user_input):
@@ -141,6 +158,8 @@ def execute_command():
     print_line_start()
 
     input_string = raw_input()
+    input_string.strip()
+
     split_input = input_string.split(" ")
     command = split_input[0]
 
@@ -171,16 +190,17 @@ def print_upload_file():
     print "The file {} was uploaded now... Success!".format(path)
 
 
-def print_fetch_metadata():
-    print "Fetching meta-data..."
-    metadata = cd._fetch_all_file_info('root', None)
-    print "Downloaded meta-data."
-    print metadata
+def fetch_metadata():
+    sys.stdout.write("Fetching meta-data from Google Drive...")
+    sf.update_metadata()
+    is_metadata_fetched = True
+    sys.stdout.write("Done!\n")
 
 
 # --- Entry point. ---
 def run_cli():
     print_startup_message()
+    fetch_metadata()
 
     while True:
         success = execute_command()
