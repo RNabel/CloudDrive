@@ -17,7 +17,7 @@ Package controlling:
 
 Functionality:
 
-- Fuse initilizer
+- Fuse initializer
 
 Settings:
 

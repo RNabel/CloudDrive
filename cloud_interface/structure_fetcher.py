@@ -1,8 +1,8 @@
 # Code used to get file system structure from Google Drive account.
 import pprint
-
-from cloud_interface import drive
 from collections import defaultdict
+from cloud_interface import drive
+import control.constants
 
 
 # File structure.
@@ -21,9 +21,9 @@ fcb_list = None  # List returned by update call.
 
 
 # Cloud functions.
-def download_file_list():
+def update_metadata():
     """
-    Set up global variables with an update of the files stored on GDrive folder.
+    Sets up or updates global variables with an update of the files stored on GDrive folder.
     Returns:
         None
     """
@@ -42,12 +42,12 @@ def _get_children_from_list(parent_id):
     """
     Get all children of given id from file_list object.
     Args:
-        parent_id: The id of the parent
+        parent_id: The id of the parent, if None, falsy value or 'root' passed, returns the all children of root.
 
     Returns:
         List of GoogleDriveFile
     """
-    if parent_id:
+    if parent_id and parent_id != 'root':
         return [x for
                 x in fcb_list
                 if parent_id in [y['id'] for y in x['parents']]]
@@ -84,33 +84,46 @@ def convert_list_to_tree(tree_node, parent_id):
             tree_node[child['id']] = child
 
 
-def _is_folder(file):
-    return file.metadata['mimeType'] == u"application/vnd.google-apps.folder"
+def _is_folder(file_object):
+    return file_object.metadata['mimeType'] == u"application/vnd.google-apps.folder"
 
 
 # Accessor methods.
 # TODO
-def get_children(identifier, isPath):
+def get_children(identifier, is_path):
+    if is_path:
+        path = identifier.split(control.constants.FILE_PATH_SEPARATOR)
+
+        current_folder_id = 'root'
+        path = path[1:]
+        parent_folder_children = []
+
+        for folder_name in path:
+            # check if folder name exists in current folder id.
+            parent_folder_children = _get_children_from_list(current_folder_id)
+            # TODO filter children by title.
+
+        return parent_folder_children
     # Either get children based on identifier, or on path.
     pass
 
 
-def pretty_print_tree(tree):
+def pretty_print_tree(input_tree):
     """
     Pretty print a nested default dictionary structure.
     Args:
-        tree: The root of the nested dictionary.
+        input_tree: The root of the nested dictionary.
 
     Returns:
         None
     """
-    pprint.pprint({k: dict(v) for k, v in dict(tree).items()})
+    pprint.pprint({k: dict(v) for k, v in dict(input_tree).items()})
 
 
 def _dicts(t): return {k: _dicts(dict(t[k])) for k in t}
 
 
 if __name__ == '__main__':
-    download_file_list()
-    convert_list_to_tree(file_tree, None)
+    update_metadata()
+    convert_list_to_tree(file_tree, 'root')
     pretty_print_tree(file_tree)

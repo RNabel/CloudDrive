@@ -43,30 +43,30 @@ def _upload_file(path, remote_target):
     up_file.Upload()
 
 
-def _download_file(id):
+def _download_file(file_id):
     """
     Download file from remote storage.
     Args:
-        id: The unique id used locally and on remote to identify file.
+        file_id: The unique id used locally and on remote to identify file.
 
     Returns:
         integer: success code, 0 if success, 1 otherwise.
     """
-    file_obj = drive.CreateFile({'id': id})
+    file_obj = drive.CreateFile({'id': file_id})
 
     # Add reference about size etc. to cache.
     # TODO need to get file size BEFORE downloading it.
     file_cache.set_file(file_obj)
 
     # Download content of file.
-    file_obj.GetContentFile(ENC_FOLDER + "/" + id)
+    file_obj.GetContentFile(ENC_FOLDER + "/" + file_id)
 
 
-def _fetch_file_info(id):
+def _fetch_file_info(file_id):
     """
     Download metadata of one file from the remote.
     Args:
-        id: The unique id of the file assigned by remote storage.
+        file_id: The unique id of the file assigned by remote storage.
 
     Returns:
         GoogleDriveFile with the metadata.
@@ -74,13 +74,19 @@ def _fetch_file_info(id):
     pass
 
 
-def _fetch_all_file_info(time):
+def _fetch_all_file_info(parent, time):
     """
     Download metadata of all files which were changed since specified time.
     Args:
+        parent: The id of the parent folder
         time: Unix time of last global fetch.
 
     Returns:
         List of GoogleDriveFile objects with metadata about each file.
     """
-    return drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+    if parent:
+        query_string = "'{}' in parents and ".format(parent)
+    else:
+        query_string = ""
+
+    return drive.ListFile({'q': query_string + "trashed=false"}).GetList()

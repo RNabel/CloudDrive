@@ -8,7 +8,7 @@ LINE_START_LOCAL = "$l "
 LINE_START_REMOTE = "$r "
 
 current_remote_path = "/"
-current_folder_id = "root"
+current_rem_dir_id = "root"
 current_local_path = os.path.expanduser("~")
 os.chdir(current_local_path)
 
@@ -27,7 +27,7 @@ available_options = {
 }
 
 
-def help_handler(input):
+def help_handler(user_input):
     print "Some help here..."
 
 
@@ -55,7 +55,7 @@ def cd_handler(user_input):
         print "cd is not implemented for remote storage yet."
 
 
-def ls_handler(input):
+def ls_handler(user_input):
     if current_mode_local:
         files = [f for f in os.listdir('.') if os.path.isfile(f)]
         folders = [f for f in os.listdir('.') if not os.path.isfile(f)]
@@ -67,31 +67,37 @@ def ls_handler(input):
 
         print output_string
     else:
+        # Fetch all meta data from current parent.
+        metadata = cd._fetch_all_file_info(current_rem_dir_id, None)
+
+        # Find all folders. TODO use structure fetcher for this.
+
+        # Find all files.
         print "ls entered yo in remote mode."
 
 
-def pwd_handler(input):
+def pwd_handler(user_input):
     if current_mode_local:
         print current_local_path
     else:
         print current_remote_path
 
 
-def up_handler(input):
+def up_handler(user_input):
     print "up entered yo."
 
 
-def dl_handler(input):
+def dl_handler(user_input):
     print "dl entered yo."
 
 
-def sw_handler(input):
+def sw_handler(user_input):
     global current_mode_local
 
     current_mode_local = not current_mode_local
 
 
-def exit_handler(input):
+def exit_handler(user_input):
     print "Session ended."
     exit(0)
 
@@ -167,7 +173,7 @@ def print_upload_file():
 
 def print_fetch_metadata():
     print "Fetching meta-data..."
-    metadata = cd._fetch_all_file_info(None)
+    metadata = cd._fetch_all_file_info('root', None)
     print "Downloaded meta-data."
     print metadata
 
