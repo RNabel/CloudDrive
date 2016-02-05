@@ -10,6 +10,8 @@ LINE_START_REMOTE = "$r "
 current_remote_path = "/"
 current_folder_id = "root"
 current_local_path = os.path.expanduser("~")
+os.chdir(current_local_path)
+
 current_mode_local = True
 
 # Mapping of commands to help text.
@@ -29,8 +31,28 @@ def help_handler(input):
     print "Some help here..."
 
 
-def cd_handler(input):
-    print "cd entered yo."
+def cd_handler(user_input):
+    global current_local_path
+
+    if current_mode_local:
+        if len(user_input) < 2:
+            print "cd: incorrect number of arguments."
+            print "usage: cd PATH."
+            return False
+
+        folder_name = " ".join(user_input[1:])
+        full_folder_path = current_local_path + "/" + folder_name
+
+        if os.path.exists(full_folder_path) \
+                and not os.path.isfile(full_folder_path):
+
+            current_local_path = full_folder_path
+            os.chdir(current_local_path)
+        else:
+            print "No such folder: {}".format(folder_name)
+
+    else:
+        print "cd is not implemented for remote storage yet."
 
 
 def ls_handler(input):
@@ -113,11 +135,11 @@ def execute_command():
     print_line_start()
 
     input_string = raw_input()
-
-    command = input_string.split(" ")[0]
+    split_input = input_string.split(" ")
+    command = split_input[0]
 
     if command in command_handlers.keys():
-        command_handlers[command](input_string)  # execute command if command found.
+        command_handlers[command](split_input)  # execute command if command found.
         return True
     else:
         # Print help message if command entered incorrectly.
