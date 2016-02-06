@@ -91,7 +91,8 @@ def is_folder(file_object):
 # Accessor methods.
 # TODO in prog, not finished. needs some testing.
 def get_children(identifier, is_path):
-    if is_path:
+    # TODO deal with special case root.
+    if is_path and identifier:
         file_object = get_file_from_path(identifier)
         if file_object:
             folder_children = _get_children_from_list(file_object['id'])  # FIXME crashed after "cd .." command

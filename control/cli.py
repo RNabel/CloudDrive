@@ -1,9 +1,12 @@
 import os
 import sys
 import argparse
+import rlcompleter
+import readline
 
 from cloud_interface import file_sync as cd, structure_fetcher as sf
 import control.constants
+from control.tools import *
 
 LINE_START_LOCAL = "$l "
 LINE_START_REMOTE = "$r "
@@ -16,12 +19,14 @@ os.chdir(current_local_path)
 current_mode_local = True
 is_metadata_fetched = False
 
+current_contents = []
+
 # Mapping of commands to help text.
 available_options = {
     'help': 'Shows this message',
     'cd': 'Enter a folder.',
     'ls': 'Show folder contents.',
-    'pwd': 'Display current working directory',
+    'cwd': 'Display current working directory',
     'up': 'Uploads a file or folder.',
     'dl': 'Download file or folder from remote.',
     'sw': 'Switch between local and remote storage.',
@@ -30,11 +35,16 @@ available_options = {
 
 
 def help_handler(user_input):
-    print "Some help here..."
+    output_string = ""
+
+    for k, v in available_options.iteritems():
+        output_string += getCyan(k) + "\t" + getRed(v) + "\n"
+
+    sys.stdout.write(output_string)
 
 
 def cd_handler(user_input):
-    global current_local_path, current_remote_path
+    global current_local_path, current_remote_path, current_contents, current_rem_dir_id
 
     if current_mode_local:
         if len(user_input) < 2:
@@ -50,18 +60,23 @@ def cd_handler(user_input):
 
             current_local_path = full_folder_path
             os.chdir(current_local_path)
+
         else:
             print "No such folder: {}".format(folder_name)
+            return False
 
-    else:
+    else:  # Remote mode.
         new_folder = " ".join(user_input[1:])
         file_path_separator = control.constants.FILE_PATH_SEPARATOR
+
         if new_folder == "..":
             separated_path = current_remote_path.split(file_path_separator)
-            new_path = "/" + file_path_separator.join(separated_path[:-1])
+            new_path = file_path_separator.join(separated_path[:-1])
             current_remote_path = new_path
+
         elif new_folder == ".":
             pass  # do nothing as current folder.
+
         else:
             # Verify path exists.
             new_path = current_remote_path + control.constants.FILE_PATH_SEPARATOR + new_folder
@@ -69,11 +84,28 @@ def cd_handler(user_input):
 
             if file_object and sf.is_folder(file_object):
                 current_remote_path = new_path
+                current_rem_dir_id = file_object['id']
             else:
                 print "The specified folder does not exist!"
+                return False
+
+    files, folders = get_current_folder_contents()
+    current_contents = files + folders
 
 
 def ls_handler(user_input):
+    files, folders = get_current_folder_contents()
+
+    output_string = ""
+    if files:
+        output_string += getYellow(u"Files:\n{}{}".format("'" + "' '".join(files) + "'", "\n" if folders else ""))
+    if folders:
+        output_string += getLightPurple(u"Folders:\n{}".format("'" + "' '".join(folders) + "'"))
+
+    print output_string
+
+
+def get_current_folder_contents():
     if current_mode_local:
         files = [f for f in os.listdir('.') if os.path.isfile(f)]
         folders = [f for f in os.listdir('.') if not os.path.isfile(f)]
@@ -84,24 +116,32 @@ def ls_handler(user_input):
         folders = sf.filter_file_list(children, True)
         folders = sf.get_titles(folders)
 
-    output_string = ""
-    if files:
-        output_string += u"Files:\n{}{}".format("'" + "' '".join(files) + "'", "\n" if folders else "")
-    if folders:
-        output_string += u"Folders:\n{}".format("'" + "' '".join(folders) + "'")
-
-    print output_string
+    return files, folders
 
 
-def pwd_handler(user_input):
+def cwd_handler(user_input):
     if current_mode_local:
         print current_local_path
     else:
         print current_remote_path
 
 
+# usage: up FILE_NAME
 def up_handler(user_input):
-    print "up entered yo."
+    # Check if file exists and is file.
+    file_name = " ".join(user_input[1:])
+    file_path = current_local_path + "/" + file_name
+
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        # Upload file here.
+        print "Uploading file..."
+        cd.sync_file(file_path, current_rem_dir_id)
+        print "The file {} was uploaded now... Success!".format(file_path)
+        return True
+
+    else:
+        print "Error could not find file {}. usage: up FILE_NAME".format(file_name)
+        return False
 
 
 def dl_handler(user_input):
@@ -123,7 +163,7 @@ command_handlers = {
     'help': help_handler,
     'cd': cd_handler,
     'ls': ls_handler,
-    'pwd': pwd_handler,
+    'cwd': cwd_handler,
     'up': up_handler,
     'dl': dl_handler,
     'sw': sw_handler,
@@ -147,9 +187,9 @@ def print_line_start():
     Returns: None
     """
     if current_mode_local:
-        start = LINE_START_LOCAL
+        start = getRed(LINE_START_LOCAL)
     else:
-        start = LINE_START_REMOTE
+        start = getCyan(LINE_START_REMOTE)
 
     sys.stdout.write(start)
 
@@ -173,28 +213,28 @@ def execute_command():
 
 
 # --- Miscellaneous functionality. ---
-def print_upload_file():
-    print "Please enter the path you wish to upload."
-
-    while True:
-        path = raw_input()
-        path = "/home/robin/PycharmProjects/CloudDrive/DESIGN.md"
-
-        if os.path.exists(path):
-            break
-        else:
-            print "The path you entered does not exist. Please re-enter the path."
-
-    print "Uploading file..."
-    cd.sync_file(path, None)
-    print "The file {} was uploaded now... Success!".format(path)
-
-
 def fetch_metadata():
     sys.stdout.write("Fetching meta-data from Google Drive...")
     sf.update_metadata()
     is_metadata_fetched = True
     sys.stdout.write("Done!\n")
+
+
+def complete(text, state, list=current_contents):
+    # Ideally completion for each type of command.
+    # Strip the command from text.
+    text = " ".join(text.split(" ")[1:])
+
+    for option in list:
+        if option.startswith(text):
+            if not state:
+                return option
+            else:
+                state -= 1
+
+
+readline.parse_and_bind("tab: complete")
+readline.set_completer(complete)
 
 
 # --- Entry point. ---
