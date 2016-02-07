@@ -19,7 +19,8 @@ os.chdir(current_local_path)
 current_mode_local = True
 is_metadata_fetched = False
 
-current_contents = []
+contained_folders = []
+contained_files = []
 
 # Mapping of commands to help text.
 available_options = {
@@ -44,7 +45,7 @@ def help_handler(user_input):
 
 
 def cd_handler(user_input):
-    global current_local_path, current_remote_path, current_contents, current_rem_dir_id
+    global current_local_path, current_remote_path, contained_folders, current_rem_dir_id, contained_files
 
     if current_mode_local:
         if len(user_input) < 2:
@@ -58,7 +59,13 @@ def cd_handler(user_input):
         if os.path.exists(full_folder_path) \
                 and not os.path.isfile(full_folder_path):
 
-            current_local_path = full_folder_path
+            if folder_name == "..":
+                separated_path = current_local_path.split("/")
+                new_path = "/".join(separated_path[:-1])
+                current_local_path = new_path
+            else:
+                current_local_path = full_folder_path
+
             os.chdir(current_local_path)
 
         else:
@@ -90,7 +97,8 @@ def cd_handler(user_input):
                 return False
 
     files, folders = get_current_folder_contents()
-    current_contents = files + folders
+    contained_folders = folders
+    contained_files = files
 
 
 def ls_handler(user_input):
@@ -138,6 +146,22 @@ def up_handler(user_input):
         cd.sync_file(file_path, current_rem_dir_id)
         print "The file {} was uploaded now... Success!".format(file_path)
         return True
+
+    elif file_name.strip() == "*":
+        # Upload all files.
+        print "Uploading files..."
+        i = 0
+        total = len(contained_files)
+
+        for name in contained_files:
+            sys.stdout.write("\rUploading {}, {} of {}".format(name, i, total))
+            sys.stdout.flush()
+            file_path = current_local_path + "/" + name
+
+            cd.sync_file(file_path, current_rem_dir_id)
+
+            i += 1
+            sys.stdout.write("\rAll files uploaded.\n")
 
     else:
         print "Error could not find file {}. usage: up FILE_NAME".format(file_name)
@@ -220,12 +244,13 @@ def fetch_metadata():
     sys.stdout.write("Done!\n")
 
 
-def complete(text, state, list=current_contents):
+def complete(text, state, files=contained_files, folders=contained_folders):
     # Ideally completion for each type of command.
     # Strip the command from text.
+    name_list = files + folders
     text = " ".join(text.split(" ")[1:])
 
-    for option in list:
+    for option in name_list:
         if option.startswith(text):
             if not state:
                 return option
