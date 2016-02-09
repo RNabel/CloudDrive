@@ -27,6 +27,7 @@ available_options = {
     'help': 'Shows this message',
     'cd': 'Enter a folder.',
     'ls': 'Show folder contents.',
+    'mkdir': 'Create new folder.',
     'cwd': 'Display current working directory',
     'up': 'Uploads a file or folder.',
     'dl': 'Download file or folder from remote.',
@@ -113,6 +114,18 @@ def ls_handler(user_input):
     print output_string
 
 
+def mkdir_handler(user_input):
+    folder_name = " ".join(user_input[1:])
+
+    if current_mode_local:
+        # Create local folder.
+        os.mkdir(current_local_path + "/" + folder_name)
+    else:
+        cd.create_folder(folder_name, current_rem_dir_id)
+        # Update metadata.
+        fetch_metadata()
+
+
 def get_current_folder_contents(local=None):
     current_mode = current_mode_local
     if local is not None:
@@ -193,6 +206,7 @@ command_handlers = {
     'help': help_handler,
     'cd': cd_handler,
     'ls': ls_handler,
+    'mkdir': mkdir_handler,
     'cwd': cwd_handler,
     'up': up_handler,
     'dl': dl_handler,

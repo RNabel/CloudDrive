@@ -60,7 +60,7 @@ class TestFileSync(TestCase):
         self.assertTrue(test_folder_name not in all_titles)
 
         # Create and upload folder.
-        file_sync._create_folder(test_folder_name, 'root')
+        file_sync.create_folder(test_folder_name, 'root')
 
         # Verify folder now exists.
         metadata = file_sync._fetch_all_file_info('root')

@@ -43,7 +43,7 @@ def _upload_file(content_file_path, parent_id):
     up_file.Upload()
 
 
-def _create_folder(folder_name, parent_id):
+def create_folder(folder_name, parent_id):
     """
     Create new folder object and upload it to GDrive.
     Args:
