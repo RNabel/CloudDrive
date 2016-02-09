@@ -113,8 +113,12 @@ def ls_handler(user_input):
     print output_string
 
 
-def get_current_folder_contents():
-    if current_mode_local:
+def get_current_folder_contents(local=None):
+    current_mode = current_mode_local
+    if local is not None:
+        current_mode = local
+
+    if current_mode:
         files = [f for f in os.listdir('.') if os.path.isfile(f)]
         folders = [f for f in os.listdir('.') if not os.path.isfile(f)]
     else:
@@ -151,9 +155,11 @@ def up_handler(user_input):
         # Upload all files.
         print "Uploading files..."
         i = 0
-        total = len(contained_files)
+        # Get all files in current local directory.
+        files, folders = get_current_folder_contents(local=True)
+        total = len(files)
 
-        for name in contained_files:
+        for name in files:
             sys.stdout.write("\rUploading {}, {} of {}".format(name, i, total))
             sys.stdout.flush()
             file_path = current_local_path + "/" + name
@@ -161,7 +167,7 @@ def up_handler(user_input):
             cd.sync_file(file_path, current_rem_dir_id)
 
             i += 1
-            sys.stdout.write("\rAll files uploaded.\n")
+        sys.stdout.write("\rAll files uploaded.\n")
 
     else:
         print "Error could not find file {}. usage: up FILE_NAME".format(file_name)
