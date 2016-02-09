@@ -52,3 +52,20 @@ class TestFileSync(TestCase):
 
         # Get new metadata, and check that new metadata now exists.
         self.fail("Not implemented")
+
+    def test_create_folder(self):
+        test_folder_name = 'TEST_FOLDER_TESTSUITE'
+        metadata = file_sync._fetch_all_file_info('root')
+        all_titles = [f['title'] for f in metadata]
+        self.assertTrue(test_folder_name not in all_titles)
+
+        # Create and upload folder.
+        file_sync._create_folder(test_folder_name, 'root')
+
+        # Verify folder now exists.
+        metadata = file_sync._fetch_all_file_info('root')
+        folder_obj = [f for f in metadata if f['title'] == test_folder_name][0]
+        self.assertTrue(test_folder_name == folder_obj['title'])
+
+        # Delete folder.
+        file_sync._delete_file(folder_obj['id'])
