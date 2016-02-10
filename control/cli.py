@@ -3,8 +3,9 @@ import sys
 import argparse
 import rlcompleter
 import readline
+import argparse
 
-from cloud_interface import file_sync as cd, structure_fetcher as sf
+from cloud_interface import file_sync, structure_fetcher as sf
 import control.constants
 from control.tools import *
 
@@ -121,7 +122,7 @@ def mkdir_handler(user_input):
         # Create local folder.
         os.mkdir(current_local_path + "/" + folder_name)
     else:
-        cd.create_folder(folder_name, current_rem_dir_id)
+        file_sync.create_folder(folder_name, current_rem_dir_id)
         # Update metadata.
         fetch_metadata()
 
@@ -160,9 +161,8 @@ def up_handler(user_input):
     if os.path.exists(file_path) and os.path.isfile(file_path):
         # Upload file here.
         print "Uploading file..."
-        cd.sync_file(file_path, current_rem_dir_id)
-        print "The file {} was uploaded now... Success!".format(file_path)
-        return True
+        file_sync.sync_file(file_path, current_rem_dir_id)
+        print "The file {} was uploaded - Success!".format(file_path)
 
     elif file_name.strip() == "*":
         # Upload all files.
@@ -177,7 +177,7 @@ def up_handler(user_input):
             sys.stdout.flush()
             file_path = current_local_path + "/" + name
 
-            cd.sync_file(file_path, current_rem_dir_id)
+            file_sync.sync_file(file_path, current_rem_dir_id)
 
             i += 1
         sys.stdout.write("\rAll files uploaded.\n")
@@ -186,6 +186,7 @@ def up_handler(user_input):
         print "Error could not find file {}. usage: up FILE_NAME".format(file_name)
         return False
 
+    sf.update_metadata()
 
 def dl_handler(user_input):
     print "dl entered yo."

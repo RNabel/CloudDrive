@@ -3,19 +3,23 @@ import os
 from cloud_interface import drive
 from control import ENC_FOLDER
 from filesystem import file_cache
+import encryption
 
 
-def sync_file(path, remote_target):
+def sync_file(path, remote_target, encrypt=True):
     """
     Synchronize state of file between local storage and remote storage.
     Args:
+        encrypt: Whether to encrypt file before upload.
         remote_target: The unique id assigned by remote storage and also used by local storage.
         path: The local file path.
 
     Returns:
         integer: 0 if successful, 1 otherwise.
     """
-
+    # Encrypt file as necessary.
+    if encrypt:
+        path = encryption.encrypt_file(path)
     _upload_file(path, remote_target)
 
 

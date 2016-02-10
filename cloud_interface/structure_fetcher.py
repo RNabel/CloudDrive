@@ -1,8 +1,11 @@
 # Code used to get file system structure from Google Drive account.
 import pprint
 from collections import defaultdict
+import urllib
+
 from cloud_interface import drive
 import control.constants
+import encryption
 
 
 # File structure.
@@ -37,7 +40,6 @@ def update_metadata():
         fcb_dict[file1['id']] = file1
 
 
-# Conversion.
 def _get_children_from_list(parent_id):
     """
     Get all children of given id from file_list object.
@@ -59,6 +61,7 @@ def _get_folders_from_list(file_list):
     return (x for x in fcb_list if x.metadata['mimeType'] == u"application/vnd.google-apps.folder")
 
 
+# Conversion.
 def convert_list_to_tree(tree_node, parent_id):
     """
     Recursively create file_tree.
@@ -147,7 +150,21 @@ def filter_file_list(files, want_folders):
 
 
 def get_titles(file_list):
-    return [f['title'] for f in file_list]
+    # Deal with possibly encrypted file names.
+    file_names = [f['title'] for f in file_list]
+
+    # Loop through all names, url-unquote and try to decrypt. If decrypted with simplecrypt, decryption successful,
+    #   otherwise Exception raised.
+    out_names = []
+    for file_name in file_names:
+        try:
+            file_name = encryption.decrypt_file_name(file_name)
+        except:
+            pass
+
+        out_names.append(file_name)
+
+    return file_names
 
 
 def _get_file_from_list(file_list, title):
