@@ -50,8 +50,9 @@ def decrypt_file(file_path, key, output_folder=None):
 
 def encrypt_file_name(file_name, key):
     file_name_enc = encrypt(file_name, key)
+    file_name_enc = base64.b64encode(file_name_enc)
     file_name_enc = file_name_enc.replace("/", "-")
-    return base64.b64encode(file_name_enc)
+    return file_name_enc
 
 
 def decrypt_file_name(file_name, key):

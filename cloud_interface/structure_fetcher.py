@@ -164,7 +164,7 @@ def get_titles(file_list):
 
         out_names.append(file_name)
 
-    return file_names
+    return out_names
 
 
 def _get_file_from_list(file_list, title):
