@@ -1,15 +1,16 @@
 import os
-import name_encryption
-import file_encryption
+
+import encryption_simple
 import util
+import control.secrets
 
 TEMP_ENC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_enc_folder"
 TEMP_DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
 
-PASSWORD = util.get_password()
+PASSWORD = control.secrets.PASSWORD
 
 
-def encrypt_file(file_name, output_folder):
+def encrypt_file(file_name, output_folder=TEMP_ENC_FOLDER):
     """
     Encrypt the file specified with file_name.
     Args:
@@ -19,32 +20,34 @@ def encrypt_file(file_name, output_folder):
     Returns: The name of the encrypted file.
 
     """
-    # Create encrypted name.
-    file_base_name = os.path.basename(file_name)
-    file_out_name = name_encryption.encrypt(PASSWORD, file_base_name)
-    file_out_name = output_folder + "/" + file_out_name
-
     # Open encrypted output file.
-    file_encryption.encrypt_file(PASSWORD, file_name, file_out_name)
-    return file_out_name
+    return encryption_simple.encrypt_file(file_name, PASSWORD, output_folder)
 
 
-def decrypt_file(file_name, output_file):
+def decrypt_file(file_name, output_folder):
     """
     Decrypt the file specified with file_name.
     Args:
         file_name: The name of the file
-        output_file: The folder to save the decrypted file to.
+        output_folder: The folder to store the file in.
 
-    Returns: The name of the decrypted file.
+    Returns: The full path of the decrypted file.
 
     """
-    # Create encrypted name.
-    file_name = os.path.split(file_name)[1]
-    file_out_name = name_encryption.decrypt(PASSWORD, file_name)
-    file_out_name = output_file + "/" + file_out_name
+    return encryption_simple.decrypt_file(file_name, PASSWORD, output_folder)
 
-    # Open encrypted output file.
-    file_encryption.decrypt_file(PASSWORD, file_name, file_out_name)
 
-    return file_out_name
+def decrypt(input):
+    return encryption_simple.decrypt(input, PASSWORD)
+
+
+def encrypt(input):
+    return encryption_simple.encrypt(input, PASSWORD)
+
+
+def decrypt_file_name(file_name):
+    return encryption_simple.decrypt_file_name(file_name, PASSWORD)
+
+
+def encrypt_file_name(file_name):
+    return encryption_simple.encrypt_file_name(file_name, PASSWORD)

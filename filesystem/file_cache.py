@@ -5,6 +5,7 @@ import collections
 
 CACHE_CAPACITY = 200
 
+
 # The caching class is adapted from this website: https://www.kunxi.org/blog/2014/05/lru-cache-in-python/
 class LRUCache:
     """

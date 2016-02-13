@@ -8,10 +8,11 @@ import errno
 from fuse import FUSE, FuseOSError, Operations
 
 
-class GDrive_Fuse(Operations):
+class GDriveFuse(Operations):
     """
     Bundles all functionality of the fuse system.
     """
+
     def __init__(self, root):
         self.root = root
 
@@ -44,7 +45,8 @@ class GDrive_Fuse(Operations):
         full_path = self._full_path(path)
         st = os.lstat(full_path)
         return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
-                     'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
+                                                        'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size',
+                                                        'st_uid'))
 
     def readdir(self, path, fh):
         full_path = self._full_path(path)
@@ -77,8 +79,9 @@ class GDrive_Fuse(Operations):
         full_path = self._full_path(path)
         stv = os.statvfs(full_path)
         return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
-            'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files', 'f_flag',
-            'f_frsize', 'f_namemax'))
+                                                         'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files',
+                                                         'f_flag',
+                                                         'f_frsize', 'f_namemax'))
 
     def unlink(self, path):
         return os.unlink(self._full_path(path))
@@ -130,4 +133,4 @@ class GDrive_Fuse(Operations):
 
 
 def main(mountpoint, root):
-    FUSE(GDrive_Fuse(root), mountpoint, nothreads=True, foreground=True)
+    FUSE(GDriveFuse(root), mountpoint, nothreads=True, foreground=True)

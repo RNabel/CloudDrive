@@ -1,7 +1,7 @@
-import filesystem.fuse_endpoint
 import os
+import filesystem.fuse_endpoint
 
-# Folders used as to store local files.
+# Folders used to store local files.
 ENC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_enc_folder"
 DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
 
@@ -15,5 +15,11 @@ def initialise_fuse(mount_point, content_folder):
 
 
 if __name__ == "__main__":
-    # test start the fuse system.
-    initialise_fuse("/home/robin/fuse_mount", "/home/robin/fuse_content")
+    # TODO check the input args and start CLI or fuse as appropriate.
+    useCLI = True
+
+    if useCLI:
+        cli.start_cli()
+    else:
+        # test start the fuse system.
+        initialise_fuse("/home/robin/fuse_mount", "/home/robin/fuse_content")
