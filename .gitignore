@@ -106,3 +106,8 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 secrets.py
+temp_dec_folder
+temp_enc_folder
+cloud_interface/client_secrets.json
+cloud_interface/GDriveContents.json
+cloud_interface/mycreds.txt

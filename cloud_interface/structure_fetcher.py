@@ -1,11 +1,14 @@
 # Code used to get file system structure from Google Drive account.
 import pprint
 from collections import defaultdict
-import urllib
+import pickle
+import os
 
 from cloud_interface import drive
 import control.constants
 import encryption
+
+metadata_storage_path = '/home/robin/PycharmProjects/CloudDrive/meta_data.txt'
 
 
 # File structure.
@@ -21,6 +24,7 @@ def tree():
 file_tree = tree()
 fcb_dict = dict()  # Map between ID and object.
 fcb_list = None  # List returned by update call.
+last_update = 0
 
 
 # Cloud functions.
@@ -32,12 +36,19 @@ def update_metadata():
     """
     global fcb_list, fcb_dict
     # Download metadata of all files.
-    fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
-
+    if os.path.exists(metadata_storage_path):
+        fcb_list = pickle.load(open(metadata_storage_path))
+    else:
+        fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
     # Read all files into dictionary.
+
     fcb_dict = dict()
     for file1 in fcb_list:
         fcb_dict[file1['id']] = file1
+
+
+def save_metadata():
+    pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
 
 
 def _get_children_from_list(parent_id):

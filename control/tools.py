@@ -38,3 +38,15 @@ def prBlack(prt): print(getBlack(prt))
 # Code 90 - 97 bright text colour, dark grey, red, green, yellow, light blue, purple, cyan, black
 # Code 100-107 background colour
 def getCustom(prt, code=98, code2=00): return u"\033[{}m{}\033[{}m".format(code, prt, code2)
+
+# A decorator function that takes care of starting a coroutine
+# automatically on call.
+
+
+def coroutine(func):
+    def start(*args, **kwargs):
+        cr = func(*args, **kwargs)
+        cr.next()
+        return cr
+
+    return start

@@ -1,7 +1,12 @@
 import simplecrypt
 import os
-import urllib
 import base64
+
+simplecrypt.EXPANSION_COUNT = (10000, 10000, 100000, 10000)
+simplecrypt.SALT_LEN = (128, 256, 256, 256)
+simplecrypt.HEADER = (simplecrypt.PREFIX + b'\x00\x00', simplecrypt.PREFIX + b'\x00\x01',
+                      simplecrypt.PREFIX + b'\x00\x02', simplecrypt.PREFIX + b'\x00\x03')
+simplecrypt.LATEST = 3
 
 
 def encrypt_file(file_path, key, output_folder=None):
