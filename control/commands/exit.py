@@ -1,4 +1,4 @@
-import cloud_interface.structure_fetcher as sf
+import cloud_interface.file_tree_navigation.structure_fetcher as sf
 
 
 def handler(user_input):

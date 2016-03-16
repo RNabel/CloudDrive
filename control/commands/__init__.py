@@ -1,7 +1,8 @@
 # Holds the current state of the system.
 import os
 import sys
-import cloud_interface.structure_fetcher as sf
+
+import cloud_interface.file_tree_navigation.structure_fetcher as sf
 
 current_remote_path = "/Test_folder"
 current_remote_dir_id = "0B46HJMu9Db4xTUxhQ0x4WHpfVmM"

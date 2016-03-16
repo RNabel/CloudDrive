@@ -1,9 +1,8 @@
 import os
 
 import control.commands as commands
-
-from cloud_interface import structure_fetcher as sf
 import control.constants
+from cloud_interface.file_tree_navigation import structure_fetcher as sf
 
 
 def handler(user_input):

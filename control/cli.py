@@ -70,12 +70,6 @@ def run_cli():
 
     while True:
         success = execute_command()
-        #
-        # if chosen_option == 'b':  # Upload a file.
-        #     print_upload_file()
-        # if chosen_option == 'c':
-        #     print_fetch_metadata()
-
 
 if __name__ == "__main__":
     run_cli()

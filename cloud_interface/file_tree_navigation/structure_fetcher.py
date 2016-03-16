@@ -32,7 +32,7 @@ def update_metadata():
     """
     Sets up or updates global variables with an update of the files stored on GDrive folder.
     Returns:
-        None
+        list
     """
     global fcb_list, fcb_dict
     # Download metadata of all files.
@@ -46,12 +46,14 @@ def update_metadata():
     for file1 in fcb_list:
         fcb_dict[file1['id']] = file1
 
+    return fcb_list
+
 
 def save_metadata():
     pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
 
 
-def _get_children_from_list(parent_id):
+def _get_children_from_list(parent_id, file_list=fcb_list):
     """
     Get all children of given id from file_list object.
     Args:
@@ -73,11 +75,12 @@ def _get_folders_from_list(file_list):
 
 
 # Conversion.
-def convert_list_to_tree(tree_node, parent_id):
+def convert_list_to_tree(tree_node, file_list, parent_id):
     """
     Recursively create file_tree.
     Args:
         tree_node: The current root node in tree.
+        file_list: List of file control block objects.
         parent_id: The id of the current root folder.
                    (note: this is not the 'root' folder of GDrive but the
                       subfolder currently considered top of the file tree.)
@@ -86,14 +89,14 @@ def convert_list_to_tree(tree_node, parent_id):
         None
     """
     # Get children of parents.
-    children = _get_children_from_list(parent_id)
+    children = _get_children_from_list(parent_id, file_list)
 
     for child in children:
         # Add to current tree node.
         if is_folder(child):  # Iterative call if folder.
             # Store reference to folder object in special field.
             tree_node[child['id'] + "_folder"] = child
-            convert_list_to_tree(tree_node[child['id']], child['id'])
+            convert_list_to_tree(tree_node[child['id']], file_list, child['id'])
         else:
             tree_node[child['id']] = child
 
@@ -103,13 +106,12 @@ def is_folder(file_object):
 
 
 # Accessor methods.
-# TODO in prog, not finished. needs some testing.
 def get_children(identifier, is_path):
-    # TODO deal with special case root.
+    # TODO check for root special case.
     if is_path and identifier:
         file_object = get_file_from_path(identifier)
         if file_object:
-            folder_children = _get_children_from_list(file_object['id'])  # FIXME crashed after "cd .." command
+            folder_children = _get_children_from_list(file_object['id'])
             return folder_children
         else:
             return []
