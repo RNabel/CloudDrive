@@ -40,6 +40,7 @@ def update_metadata():
         fcb_list = pickle.load(open(metadata_storage_path))
     else:
         fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
+        pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
     # Read all files into dictionary.
 
     fcb_dict = dict()
