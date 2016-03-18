@@ -75,28 +75,34 @@ def _get_folders_from_list(file_list):
 
 
 # Conversion.
-def convert_list_to_tree(tree_node, file_list, parent_id):
+def convert_list_to_tree(tree_node, file_list, current, parent_directory):
     """
     Recursively create file_tree.
     Args:
         tree_node: The current root node in tree.
         file_list: List of file control block objects.
-        parent_id: The id of the current root folder.
+        current: The current root folder object.
                    (note: this is not the 'root' folder of GDrive but the
-                      subfolder currently considered top of the file tree.)
+                      sub-folder currently considered top of the file tree.)
+        parent_directory: The object containing the current directory.
 
     Returns:
         None
     """
     # Get children of parents.
-    children = _get_children_from_list(parent_id, file_list)
+    current_id = "root" if current == "root" else current["id"]
+    children = _get_children_from_list(current_id, file_list)
+
+    # Set current and parent directory objects.
+    tree_node["parent"] = parent_directory
+    tree_node["self"] = current
 
     for child in children:
         # Add to current tree node.
         if is_folder(child):  # Iterative call if folder.
             # Store reference to folder object in special field.
             tree_node[child['id'] + "_folder"] = child
-            convert_list_to_tree(tree_node[child['id']], file_list, child['id'])
+            convert_list_to_tree(tree_node[child['id']], file_list, child, tree_node)
         else:
             tree_node[child['id']] = child
 
@@ -205,6 +211,5 @@ def _dicts(t): return {k: _dicts(dict(t[k])) for k in t}
 
 if __name__ == '__main__':
     update_metadata()
-    convert_list_to_tree(file_tree, 'root')
     get_file_object_from_parent('root', 'Documents')
     get_children('/Documents', True)
