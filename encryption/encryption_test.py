@@ -1,53 +1,109 @@
-import encryption
-import encryption.name_encryption
-import encryption.file_encryption
-import encryption.util
+import unittest
 import os
 
-if __name__ == "__main__":
-    password = encryption.util.get_password()
+import secrets
+from encryption_simple import Encryptor
 
-    # Testing name encryption.
-    testName = "Hello.docx"
-    encryptedName = encryption.name_encryption.encrypt(password, testName)
-    decryptedName = encryption.name_encryption.decrypt(password, encryptedName)
-    assert testName == decryptedName
+class EncrytorTest(unittest.TestCase):
+    def setUp(self):
+        super(EncrytorTest, self).setUp()
+        self.encryptor = Encryptor(secrets.password)
+        self.encryptor.cipher_storage.create_cipher()
 
-    # Test file encryption and decryption.
-    file_name = "test_file.txt"
-    file_test_string = "1234567890ABCdef!@#$%^&*("
-    fptr = open(file_name, "w+")
-    fptr.seek(0)
-    fptr.write(file_test_string)
-    fptr.flush()
-    fptr.seek(0)
-    file_content = fptr.readline()
-    assert file_test_string == file_content  # Assert successful write action
+    def test_string_encryption(self):
+        data = "hello"
+        encrypted = self.encryptor.encrypt(data, string=True)
+        decrypted = self.encryptor.decrypt(encrypted, string=True)
 
-    encryption.file_encryption.encrypt_file(password, file_name)
-    encryption.file_encryption.decrypt_file(password, file_name + ".enc", file_name + ".dec")
+        self.assertEqual(data, decrypted)
 
-    # Read from both files, and compare results.
-    original_file = open(file_name, "r")
-    decrypted_file = open(file_name + ".dec", "r")
-    assert original_file.readline() == decrypted_file.readline()
+    def test_file_name_encryption(self):
+        data = "hello"
+        encrypted = self.encryptor.encrypt(data, file_name=True)
+        decrypted = self.encryptor.decrypt(encrypted, file_name=True)
 
-    # Tear-down
-    os.remove(file_name)
-    os.remove(file_name + ".dec")
-    os.remove(file_name + ".enc")
+        self.assertEqual(data, decrypted)
 
-    # Test end-to-end.
-    test_file_name = "../README.md"
-    encrypted_name = encryption.encrypt_file(test_file_name)
+    def test_file_encryption_in_place(self):
+        file_name = "test_file"
+        data = "test data here..."
+        if os.path.exists(file_name):
+            self.fail("File with name {} exists.".format(file_name))
 
-    decrypted_name = encryption.decrypt_file(encrypted_name)
+        file_ptr = open(file_name, mode="w+")
+        file_ptr.write(data)
+        file_ptr.flush()
 
-    # Check content correct.
-    original_file = open(test_file_name)
-    decrypted_file = open(decrypted_name)
+        passed = False
+        try:
+            self.encryptor.encrypt(file_name, is_file=True)
+            # file_ptr.seek(0)
+            # encrypted = file_ptr.read()
+            # self.assertFalse(encrypted == data)
+            self.encryptor.decrypt(file_name, is_file=True)
+            file_ptr.seek(0)
+            decrypted = file_ptr.read()
+            self.assertEqual(data, decrypted, "Decrypted text does not equal the original text.")
+            passed = True
+        finally:
+            os.remove(file_name)
+            self.assertTrue(passed)
 
-    assert original_file.read() == decrypted_file.read()
+    def test_file_encryption_encryption_different_file(self):
+        file_in = "test_file.in"
+        file_out = "test_file.out"
+        data = "test data here..."
 
-    os.remove(encrypted_name)
-    os.remove(decrypted_name)
+        if os.path.exists(file_in) or os.path.exists(file_out):
+            self.fail("File with name {} or {} exists.".format(file_in, file_out))
+
+        file_ptr = open(file_in, mode="w+")
+        file_ptr.write(data)
+        file_ptr.flush()
+
+        passed = False
+
+        try:
+            self.encryptor.encrypt(file_in, is_file=True, target_path=file_out)
+            # file_ptr.seek(0)
+            # encrypted = file_ptr.read()
+            # self.assertFalse(encrypted == data)
+            self.encryptor.decrypt(file_out, is_file=True)
+            file_ptr = open(file_out)
+            decrypted = file_ptr.read()
+            self.assertEqual(data, decrypted, "Decrypted text does not equal the original text.")
+            passed = True
+        finally:
+            os.remove(file_in)
+            os.remove(file_out)
+            self.assertTrue(passed, "Tests did not pass.")
+
+    def test_encryption_decryption_in_different_file(self):
+        file_in = "ttest_file.in"
+        file_out = "test_file.out"
+        data = "test data here..."
+
+        if os.path.exists(file_in) or os.path.exists(file_out):
+            self.fail("File with name {} or {} exists.".format(file_in, file_out))
+
+        file_ptr = open(file_in, mode="w+")
+        file_ptr.write(data)
+        file_ptr.flush()
+
+        passed = False
+
+        try:
+            self.encryptor.encrypt(file_in, is_file=True)
+            # file_ptr.seek(0)
+            # encrypted = file_ptr.read()
+            # self.assertFalse(encrypted == data)
+            self.encryptor.decrypt(file_in, is_file=True, target_path=file_out)
+            file_ptr = open(file_out)
+            decrypted = file_ptr.read()
+            self.assertEqual(data, decrypted, "Decrypted text does not equal the original text.")
+            passed = True
+        finally:
+            os.remove(file_in)
+            os.remove(file_out)
+            self.assertTrue(passed, "Tests did not pass.")
+
