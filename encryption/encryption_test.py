@@ -2,7 +2,7 @@ import unittest
 import os
 
 import secrets
-from encryption_simple import Encryptor
+from encryptor import Encryptor
 
 class EncrytorTest(unittest.TestCase):
     def setUp(self):

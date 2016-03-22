@@ -3,7 +3,7 @@ import structure_fetcher as sf
 import pydrive.files
 
 from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TITLE
-from encryption.encryption_simple import Encryptor
+from encryption.encryptor import Encryptor
 import secrets
 
 

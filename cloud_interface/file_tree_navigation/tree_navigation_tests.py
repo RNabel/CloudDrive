@@ -1,6 +1,6 @@
 import unittest
 
-from encryption.encryption_simple import Encryptor
+from encryption.encryptor import Encryptor
 from cloud_interface.file_tree_navigation import FileTreeState
 from pydrive.files import GoogleDriveFile
 import secrets

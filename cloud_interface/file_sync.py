@@ -2,7 +2,7 @@
 import os
 from cloud_interface import drive
 from control import ENC_FOLDER
-from filesystem import file_cache
+from filesystem import decrypted_data_storage
 import encryption
 
 
@@ -80,7 +80,7 @@ def _download_file(file_id):
 
     # Add reference about size etc. to cache.
     # TODO need to get file size BEFORE downloading it.
-    file_cache.set_file(file_obj)
+    decrypted_data_storage.set_file(file_obj)
 
     # Download content of file.
     file_obj.GetContentFile(ENC_FOLDER + "/" + file_id)
