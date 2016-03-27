@@ -1,10 +1,11 @@
 import os
+import base64
 
 from pydrive.files import GoogleDriveFile
 from control.constants import FILE_PATH_SEPARATOR as PATH_SEPARATOR, DECRYPTED_FOLDER_PATH, ENCRYPTED_FOLDER_PATH
 
 
-class FileBuffer:
+class FileBuffer(object):
     def __init__(self, storage_folder):
         self.path = storage_folder
         self.files = dict()
@@ -43,13 +44,25 @@ class FileBuffer:
         pass
 
     def _create_file_name(self, gdrive_file):
-        file_id = gdrive_file["id"]
+        file_id = self.id_to_file_name(gdrive_file["id"])
         file_name = self.path + PATH_SEPARATOR + file_id
 
         return file_name
 
+    @staticmethod
+    def id_to_file_name(file_id):
+        file_id = base64.b64encode(file_id)
+        file_id = file_id.replace("/", "-")
+        return file_id
 
-class EncryptedFileBuffer(object, FileBuffer):
+    @staticmethod
+    def file_name_to_id(file_name):
+        file_name = file_name.replace("-", "/")
+        file_name = base64.b64decode(file_name)
+        return file_name
+
+
+class EncryptedFileBuffer(FileBuffer):
     def __init__(self, storage_folder=ENCRYPTED_FOLDER_PATH):
         super(EncryptedFileBuffer, self).__init__(storage_folder)
 
@@ -66,6 +79,7 @@ class EncryptedFileBuffer(object, FileBuffer):
         self.files[file_id] = gdrive_file
 
         file_path = self._create_file_name(gdrive_file)
+        # open(file_path, 'wa').close()
         gdrive_file.GetContentFile(file_path)
 
     def upload_file(self, gdrive_file):
@@ -77,6 +91,7 @@ class EncryptedFileBuffer(object, FileBuffer):
         Returns:
 
         """
+        pass
 
     def remove_file(self, file_id):
         file_path = self.get_file_path(file_id)
@@ -87,7 +102,7 @@ class EncryptedFileBuffer(object, FileBuffer):
             return False
 
 
-class DecryptedFileBuffer(object, FileBuffer):
+class DecryptedFileBuffer(FileBuffer):
     def __init__(self, storage_folder=DECRYPTED_FOLDER_PATH):
         super(DecryptedFileBuffer, self).__init__(storage_folder)
-    # TODO finish this part.
+        # TODO finish this part.
