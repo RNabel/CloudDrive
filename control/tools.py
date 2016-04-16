@@ -1,5 +1,7 @@
-# Adapted from http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
+# Adapted from http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
 def getRed(prt): return u"\033[91m{}\033[00m".format(prt)
 def prRed(prt): print(getRed(prt))
 
@@ -50,3 +52,16 @@ def coroutine(func):
         return cr
 
     return start
+
+
+def copy_drive(gauth):
+    '''Create a deep copy of the GoogleAuth object,
+    and the GoogleDrive object for use by another thread.
+    :param drive: the GoogleAuth object to copy
+    :returns: a tuple with the copies of the GoogleAuth and a GoogelDrive object'''
+    old_gauth = gauth
+    gauth = GoogleAuth()
+    gauth.credentials = old_gauth.credentials
+    gauth.Authorize()
+    drive = GoogleDrive(gauth)
+    return (gauth, drive)
