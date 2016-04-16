@@ -2,7 +2,12 @@ import base64
 import os
 import uu
 
+import time
+
+from split_file import getfilesize, splitfile
 from cloud_interface import drive
+
+SPLIT_SIZE = 20000000
 
 upload_file_path_too_big = '/home/robin/Downloads/Silicon.Valley.S01.Season.1.720p.5.1Ch.BluRay.ReEnc-DeeJayAhmed/Silicon (copy).Valley.S01E01.720p.5.1Ch.BluRay.ReEnc-DeeJayAhmed.txt'
 upload_file_path_small = 'test.png'
@@ -32,6 +37,7 @@ def main():
     # Remove temp file.
     # os.remove(fptr.name)
 
+
 def wrap_lines(in_name, out_name):
     # Wrap each line with quotes.
     f_in = open(in_name)
@@ -43,15 +49,30 @@ def wrap_lines(in_name, out_name):
     f_in.close()
     f_out.close()
 
+
 def upload_file(upload_file_name):
+    temp_file_name = 'encoded.csv'
     # Encode file.
-    base64.encode(open(upload_file_name), open('encoded.csv', 'w+'))
+    base64.encode(open(upload_file_name), open(temp_file_name, 'w+'))
 
-    up_file = drive.CreateFile({'title': 'test_upload.csv', 'mimeType': 'text/csv'})
-    up_file.SetContentFile('encoded.csv')
+    # Split file.
+    file_size = getfilesize(temp_file_name)
+    if file_size > 13000000:
+        num_split_files = splitfile(temp_file_name, 13000000)
+    else:
+        os.rename(temp_file_name, 'encoded_1.csv')
+        num_split_files = 1
 
-    print "Uploading..."
-    up_file.Upload({'convert': True}),
+    for i in range(num_split_files):
+        up_file = drive.CreateFile({'title': 'test_upload_{}.csv'.format(i), 'mimeType': 'text/csv'})
+        up_file.SetContentFile('encoded_{}.csv'.format(i + 1))
+        start = time.time()
+        print "Uploading: {}...".format(i)
+        up_file.Upload({'convert': True}),
+        end = time.time()
+        m, s = divmod(end - start, 60)
+        print "Time taken: ", m, "m ", s, "s"
+
     print "Done"
 
 

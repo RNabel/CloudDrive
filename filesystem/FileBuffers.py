@@ -37,10 +37,15 @@ class FileBuffer(object):
         file_path = file_obj.name
         new_file_path = self._create_file_name(gdrive_file)
 
-        # Copy the file.
+        # Move the file.
         os.rename(file_path, new_file_path)
 
+        # TODO add the file to the internal storage.
+        file_id = gdrive_file['id']
+        self.files[file_id] = gdrive_file
+
     def remove_file(self, file_id):
+        # Delete file, and remove reference from internal storage.
         pass
 
     def _create_file_name(self, gdrive_file):
