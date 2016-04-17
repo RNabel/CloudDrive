@@ -1,6 +1,6 @@
 import base64
 import os
-
+import fileinput
 import time
 import uuid
 
@@ -14,6 +14,7 @@ upload_file_path_too_big = '/home/robin/Downloads/Silicon.Valley.S01.Season.1.72
 upload_file_path_small = 'test.png'
 upload_file_path_medium = '/home/robin/Downloads/Mary Beard -- S.P.Q.R. (2015)/test.m4b'
 upload_file_path_large = '/home/robin/Downloads/Richard Dawkins - The Selfish Gene/The Selfish Gene Unabridged 1_001.mp3'
+
 
 def upload_file(upload_file_name):
     temp_file_name = 'encoded.csv'
@@ -45,24 +46,45 @@ def upload_file(upload_file_name):
     end = time.time()
     m, s = divmod(end - start, 60)
     print "Overall time taken: ", m, "m ", s, "s"
+    return file_id
+
 
 def download_file(file_id, output_name):
     # Get all files with uuid.
     # fcb_list = drive.ListFile({'q': 'appProperties has { key="CloudDrive" and value="%s"}' % file_id})
-    fcb_list = drive.ListFile({'q': "properties has { key='CloudDrive' and value='%s' }" % file_id})
-    for file_obj in fcb_list:
-        print file_obj
-    dl_file = drive.CreateFile({'id': file_id})
-    print "Downloading"
-    dl_file.GetContentFile('temp.csv', 'text/csv')
-    print "Downloaded"
+    fcb_list = drive.ListFile(
+        {'q': "properties has { key='CloudDrive' and value='%s' and visibility='PUBLIC' }" % file_id}).GetList()
+
+    # TODO verification of parts.
+
+    filenames = [file_id + "_" + str(i) for i in range(1, len(fcb_list) + 1)]
+    for fi, f_name in zip(fcb_list, filenames):
+        dl_file = fi
+        print "Downloading"
+        dl_file.GetContentFile(f_name, mimetype='text/csv')
+        print "Downloaded"
+
+    # Merge file.
+    merge_files(file_id, filenames)
+
+    # Delete temp files.
+    for f in filenames:
+        os.remove(f)
 
     # Decode file.
-    base64.decode(open('temp.csv'), open(output_name, 'w+'))
-    os.remove('temp.csv')
+    base64.decode(open(file_id), open(file_id + "_decoded", 'w+'))
     print "Done"
 
 
+def merge_files(output_name, filenames):
+    fin = fileinput.input(filenames)
+    with open(output_name, 'w') as fout:
+        for line in fin:
+            fout.write(line)
+
+    fin.close()
+
+
 if __name__ == '__main__':
-    upload_file(upload_file_path_medium)
-    # download_file('68f217e4-0426-11e6-af4e-5ce0c598f03f', 'output')
+    # print upload_file(upload_file_path_medium)
+    download_file('58ffd9dc-04cd-11e6-812c-5ce0c598f03f', 'output')

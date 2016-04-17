@@ -32,6 +32,7 @@ class UploadWorkerThread(threading.Thread):
     def upload_file_worker(self):
         i = self.index
         params = {'title': 'test_upload_{}.csv'.format(i),
+                  'parents': [{"kind": "drive#fileLink", "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}],
                   'mimeType': 'text/csv',
                   'properties': [{"value": (str(self.id)), "key": "CloudDrive", "visibility": "PUBLIC"}]
                   }
