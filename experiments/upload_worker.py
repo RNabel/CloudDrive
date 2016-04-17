@@ -3,6 +3,7 @@ Class which wraps the functionality of an individual upload.
 """
 import time
 import threading
+import uuid
 from cloud_interface import gauth
 from control import tools
 
@@ -15,6 +16,7 @@ class UploadWorkerThread(threading.Thread):
         self.args = args
         self.kwargs = kwargs
         self.index = self.kwargs['index']
+        self.id = self.kwargs['id']
 
         # Create Oauth copy.
         print "Create oauth"
@@ -29,7 +31,11 @@ class UploadWorkerThread(threading.Thread):
 
     def upload_file_worker(self):
         i = self.index
-        up_file = self.drive.CreateFile({'title': 'test_upload_{}.csv'.format(i), 'mimeType': 'text/csv'})
+        params = {'title': 'test_upload_{}.csv'.format(i),
+                  'mimeType': 'text/csv',
+                  'properties': [{"value": (str(self.id)), "key": "CloudDrive", "visibility": "PUBLIC"}]
+                  }
+        up_file = self.drive.CreateFile(params)
         up_file.SetContentFile('encoded_{}.csv'.format(i + 1))
         start = time.time()
         print "Uploading: {}...\n".format(i)

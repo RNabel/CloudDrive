@@ -28,6 +28,8 @@ last_update = 0
 
 
 # Cloud functions.
+# TODO allow searching AFTER last search.
+# TODO  More info [here](https://developers.google.com/drive/v3/web/search-parameters#examples)
 def update_metadata():
     """
     Sets up or updates global variables with an update of the files stored on GDrive folder.
