@@ -1,3 +1,10 @@
+"""
+File that allows up and download of files using the (free) Google Spreadsheets format.
+Files are converted to Base64 and up/downloaded as CSV. If the file exceeds the required size,
+the file is split up and uploaded in chunks, which are reconstituted by the downloader.
+
+File chunks are identified through a series of [Custom Properties](https://developers.google.com/drive/v2/web/properties).
+"""
 import base64
 import os
 import fileinput
@@ -17,6 +24,7 @@ upload_file_path_large = '/home/robin/Downloads/Richard Dawkins - The Selfish Ge
 
 
 def upload_file(upload_file_name):
+    file_name = os.path.basename(upload_file_name)
     temp_file_name = 'encoded.csv'
     # Encode file.
     base64.encode(open(upload_file_name), open(temp_file_name, 'w+'))
@@ -35,7 +43,11 @@ def upload_file(upload_file_name):
     file_id = uuid.uuid1()
     print file_id
     for i in range(num_split_files):
-        up_t = upload_worker.UploadWorkerThread(kwargs={'index': i, 'id': file_id})
+        up_t = upload_worker.UploadWorkerThread(kwargs=
+                                                {'index': i,
+                                                 'id': file_id,
+                                                 'filename': file_name,
+                                                 'numFileParts': num_split_files})
         up_t.start()
         threads.append(up_t)
 
@@ -49,22 +61,30 @@ def upload_file(upload_file_name):
     return file_id
 
 
-def download_file(file_id, output_name):
+def download_file(file_id, output_name=None):
     # Get all files with uuid.
     # fcb_list = drive.ListFile({'q': 'appProperties has { key="CloudDrive" and value="%s"}' % file_id})
     fcb_list = drive.ListFile(
-        {'q': "properties has { key='CloudDrive' and value='%s' and visibility='PUBLIC' }" % file_id}).GetList()
+        {'q': "properties has { key='CloudDrive_id' and value='%s' and visibility='PUBLIC' }" % file_id}).GetList()
 
-    # TODO verification of parts.
+    if len(fcb_list) == 0:
+        print "Error no file found"
+        return False
 
-    filenames = [file_id + "_" + str(i) for i in range(1, len(fcb_list) + 1)]
-    for fi, f_name in zip(fcb_list, filenames):
-        dl_file = fi
+    output_name = output_name or get_property('CloudDrive_filename', fcb_list[0], True)
+    total_files = get_property('CloudDrive_total', fcb_list[0], True)
+    assert int(total_files) == len(fcb_list)
+
+    filenames = []
+    for fi in fcb_list:
+        file_name = file_id + "_" + get_property('CloudDrive_part', fi, True)
+        filenames.append(file_name)
         print "Downloading"
-        dl_file.GetContentFile(f_name, mimetype='text/csv')
+        fi.GetContentFile(file_name, mimetype='text/csv')
         print "Downloaded"
 
     # Merge file.
+    filenames.sort()
     merge_files(file_id, filenames)
 
     # Delete temp files.
@@ -72,10 +92,14 @@ def download_file(file_id, output_name):
         os.remove(f)
 
     # Decode file.
-    base64.decode(open(file_id), open(file_id + "_decoded", 'w+'))
+    base64.decode(open(file_id), open(output_name, 'w+'))
+
+    # Delete temp file.
+    os.remove(file_id)
     print "Done"
 
 
+# File functions.
 def merge_files(output_name, filenames):
     fin = fileinput.input(filenames)
     with open(output_name, 'w') as fout:
@@ -85,6 +109,17 @@ def merge_files(output_name, filenames):
     fin.close()
 
 
+# GoogleDriveFile accessors.
+def get_property(name, file_obj, return_value=False):
+    elements = filter(lambda x: x['key'] == name, file_obj.get('properties'))
+    returnObj = elements[0] if len(elements) else None
+
+    # Return the value if requested.
+    if returnObj and return_value:
+        returnObj = returnObj['value']
+    return returnObj
+
+
 if __name__ == '__main__':
     # print upload_file(upload_file_path_medium)
-    download_file('58ffd9dc-04cd-11e6-812c-5ce0c598f03f', 'output')
+    download_file('c634a2bc-04d2-11e6-b18e-5ce0c598f03f')

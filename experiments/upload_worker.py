@@ -17,6 +17,20 @@ class UploadWorkerThread(threading.Thread):
         self.kwargs = kwargs
         self.index = self.kwargs['index']
         self.id = self.kwargs['id']
+        self.filename = self.kwargs['filename']
+        self.totalFileNum = self.kwargs['numFileParts']
+
+        # Set up upload params.
+        self.params = {'title': 'test_upload_{}.csv'.format(self.index),
+                       'parents': [{"kind": "drive#fileLink", "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}],
+                       'mimeType': 'text/csv',
+                       'properties': [
+                           {"value": (str(self.id)), "key": "CloudDrive_id", "visibility": "PUBLIC"},
+                           {"value": (str(self.index)), "key": "CloudDrive_part", "visibility": "PUBLIC"},
+                           {"value": (str(self.filename)), "key": "CloudDrive_filename", "visibility": "PUBLIC"},
+                           {"value": (str(self.totalFileNum)), "key": "CloudDrive_total", "visibility": "PUBLIC"}
+                       ]
+                       }
 
         # Create Oauth copy.
         print "Create oauth"
@@ -30,18 +44,12 @@ class UploadWorkerThread(threading.Thread):
         return
 
     def upload_file_worker(self):
-        i = self.index
-        params = {'title': 'test_upload_{}.csv'.format(i),
-                  'parents': [{"kind": "drive#fileLink", "id": '0B46HJMu9Db4xTUxhQ0x4WHpfVmM'}],
-                  'mimeType': 'text/csv',
-                  'properties': [{"value": (str(self.id)), "key": "CloudDrive", "visibility": "PUBLIC"}]
-                  }
-        up_file = self.drive.CreateFile(params)
-        up_file.SetContentFile('encoded_{}.csv'.format(i + 1))
+        up_file = self.drive.CreateFile(self.params)
+        up_file.SetContentFile('encoded_{}.csv'.format(self.index + 1))
         start = time.time()
-        print "Uploading: {}...\n".format(i)
+        print "Uploading: {}...\n".format(self.index)
         up_file.Upload({'convert': True}),
-        print "Upload {}: done\n".format(i)
+        print "Upload {}: done\n".format(self.index)
         end = time.time()
         m, s = divmod(end - start, 60)
         print "Time taken: ", m, "m ", s, "s"
