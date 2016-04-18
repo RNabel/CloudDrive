@@ -10,12 +10,24 @@ import os
 import fileinput
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 from split_file import getfilesize, splitfile
+import control.constants
+
+# Set up project path.
+if __name__ == '__main__':
+    # Set project variable.
+    control.constants.PROJECT_FOLDER = os.path.abspath("../")
+
 from cloud_interface import drive
+import download_worker
 import upload_worker
 
 SPLIT_SIZE = 13000000  # 13MB (13000000) is maximum.
+MAX_DOWNLOADS = 2
+MAX_UPLOADS = 2
 
 # Test files generated with `dd if=/dev/zero of={file name} bs={size}M count=1`
 upload_file_path_small = 'small.dat'
@@ -23,37 +35,35 @@ upload_file_path_medium = 'medium.dat'
 upload_file_path_large = 'large.dat'
 
 
-def upload_file(upload_file_name):
+def upload_file(upload_file_name,
+                temp_file_name='encoded.csv',
+                split_file_format="{orig_file}_{id}.{orig_ext}",
+                parent_folder_id='0B46HJMu9Db4xTUxhQ0x4WHpfVmM'):
     file_name = os.path.basename(upload_file_name)
-    temp_file_name = 'encoded.csv'
+
     # Encode file.
     base64.encode(open(upload_file_name), open(temp_file_name, 'w+'))
 
     # Split file.
-    file_size = getfilesize(temp_file_name)
-    if file_size > SPLIT_SIZE:
-        num_split_files = splitfile(temp_file_name, SPLIT_SIZE)
-    else:
-        os.rename(temp_file_name, 'encoded_1.csv')
-        num_split_files = 1
+    num_split_files, file_names = splitfile(temp_file_name, SPLIT_SIZE, split_file_format)
 
     # Start upload threads.
     start = time.time()
-    threads = []
     file_id = uuid.uuid1()
-    print file_id
-    for i in range(num_split_files):
-        up_t = upload_worker.UploadWorkerThread(kwargs=
-                                                {'index': i,
-                                                 'id': file_id,
-                                                 'filename': file_name,
-                                                 'numFileParts': num_split_files})
-        up_t.start()
-        threads.append(up_t)
+    thread_pool = ThreadPoolExecutor(max_workers=MAX_DOWNLOADS)
 
-    # Join threads, i.e. wait for completion.
-    for i in threads:
-        i.join()
+    for i in range(num_split_files):
+        current_file_name = file_names[i]
+        up_t = upload_worker.UploadWorker(index=i + 1,
+                                          file_id=file_id,
+                                          filename=file_name,
+                                          parent_folder_id=parent_folder_id,
+                                          total_file_num=num_split_files,
+                                          upload_file_name=current_file_name)
+        future = thread_pool.submit(up_t.run)
+
+    # Wait for completion.
+    thread_pool.shutdown()
 
     end = time.time()
     m, s = divmod(end - start, 60)
@@ -75,12 +85,20 @@ def download_file(file_id, output_name=None):
     assert int(total_files) == len(fcb_list)
 
     file_names = []
+    thread_pool = ThreadPoolExecutor(max_workers=MAX_UPLOADS)
+    futures = []
     for fi in fcb_list:
-        file_name = file_id + "_" + get_property('CloudDrive_part', fi, True)
-        file_names.append(file_name)
-        print "Downloading"
-        fi.GetContentFile(file_name, mimetype='text/csv')
-        print "Downloaded"
+        index = get_property('CloudDrive_part', fi, True)
+        uload_worker = download_worker.DownloadWorker(index=index, file_id=file_id, file_obj=fi)
+        # file_names.append(uload_worker.get_file_name())
+
+        # futures.append(thread_pool.submit(uload_worker.run))
+        uload_worker.run()
+
+    # Wait for download completion.
+    # thread_pool.shutdown(wait=True)
+    # ret = concurrent.futures.wait(futures)
+    # print ret
 
     # Merge file.
     file_names.sort()
@@ -108,7 +126,7 @@ def merge_files(output_name, file_names):
     fin.close()
 
 
-# GoogleDriveFile accessors.
+# GoogleDriveFile accessor.
 def get_property(name, file_obj, return_value=False):
     elements = filter(lambda x: x['key'] == name, file_obj.get('properties'))
     return_obj = elements[0] if len(elements) else None
@@ -121,4 +139,4 @@ def get_property(name, file_obj, return_value=False):
 
 if __name__ == '__main__':
     # print upload_file(upload_file_path_medium)
-    download_file('c634a2bc-04d2-11e6-b18e-5ce0c598f03f')
+    download_file('faf03488-05ab-11e6-a401-80ee7341b961')

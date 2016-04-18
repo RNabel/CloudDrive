@@ -22,10 +22,14 @@ def getfilesize(filename):
         return fr.tell()
 
 
-def splitfile(filename, splitsize):
+def splitfile(filename, splitsize, split_file_format="{orig_file}_{id}.{orig_ext}"):
     """
     Splits a file into splitsize-sized chunks
     Args:
+        split_file_format: formatting of the split files.
+                    fields available: the original_file_name = {orig_file},
+                                      original file ending = {orig_ext}
+                                      the current index = {id}
         filename: Name of the file to be split.
         splitsize: Size of each splitted component in bytes.
 
@@ -38,6 +42,7 @@ def splitfile(filename, splitsize):
         return
 
     filesize = getfilesize(filename)
+    filenames = []
     with open(filename, "rb") as fr:
         counter = 1
         orginalfilename = filename.split(".")
@@ -49,7 +54,10 @@ def splitfile(filename, splitsize):
             data_5kb = fr.read(readlimit)  # read
             # Create split files
             print("chunks_count: %d" % chunks_count)
-            with open(orginalfilename[0] + "_{id}.".format(id=str(counter)) + orginalfilename[1], "ab") as fw:
+            chunk_file_name = split_file_format.format(id=str(counter),
+                                                       orig_file=str(orginalfilename[0]),
+                                                       orig_ext=str(orginalfilename[1]))
+            with open(chunk_file_name, "ab") as fw:
                 fw.seek(0)
                 fw.truncate()  # truncate original if present
                 while data_5kb:
@@ -59,5 +67,8 @@ def splitfile(filename, splitsize):
                         data_5kb = fr.read(readlimit)
                     else:
                         break
+
             counter += 1
-    return n_splits + 1
+            filenames.append(chunk_file_name)
+
+    return n_splits + 1, filenames

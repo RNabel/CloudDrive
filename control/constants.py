@@ -3,6 +3,8 @@ import os
 
 FILE_PATH_SEPARATOR = "/"  # Remote file path separator.
 
+PROJECT_FOLDER = ''
+
 # Encryption related constants.
 ENCRYPTED_FLAG = "encrypted"
 DECRYPTED_TITLE = "decrypted_title"
