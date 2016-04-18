@@ -17,10 +17,10 @@ import upload_worker
 
 SPLIT_SIZE = 13000000  # 13MB (13000000) is maximum.
 
-upload_file_path_too_big = '/home/robin/Downloads/Silicon.Valley.S01.Season.1.720p.5.1Ch.BluRay.ReEnc-DeeJayAhmed/Silicon (copy).Valley.S01E01.720p.5.1Ch.BluRay.ReEnc-DeeJayAhmed.txt'
-upload_file_path_small = 'test.png'
-upload_file_path_medium = '/home/robin/Downloads/Mary Beard -- S.P.Q.R. (2015)/test.m4b'
-upload_file_path_large = '/home/robin/Downloads/Richard Dawkins - The Selfish Gene/The Selfish Gene Unabridged 1_001.mp3'
+# Test files generated with `dd if=/dev/zero of={file name} bs={size}M count=1`
+upload_file_path_small = 'small.dat'
+upload_file_path_medium = 'medium.dat'
+upload_file_path_large = 'large.dat'
 
 
 def upload_file(upload_file_name):
@@ -63,32 +63,31 @@ def upload_file(upload_file_name):
 
 def download_file(file_id, output_name=None):
     # Get all files with uuid.
-    # fcb_list = drive.ListFile({'q': 'appProperties has { key="CloudDrive" and value="%s"}' % file_id})
     fcb_list = drive.ListFile(
         {'q': "properties has { key='CloudDrive_id' and value='%s' and visibility='PUBLIC' }" % file_id}).GetList()
 
     if len(fcb_list) == 0:
-        print "Error no file found"
+        print "Error, file was not found."
         return False
 
     output_name = output_name or get_property('CloudDrive_filename', fcb_list[0], True)
     total_files = get_property('CloudDrive_total', fcb_list[0], True)
     assert int(total_files) == len(fcb_list)
 
-    filenames = []
+    file_names = []
     for fi in fcb_list:
         file_name = file_id + "_" + get_property('CloudDrive_part', fi, True)
-        filenames.append(file_name)
+        file_names.append(file_name)
         print "Downloading"
         fi.GetContentFile(file_name, mimetype='text/csv')
         print "Downloaded"
 
     # Merge file.
-    filenames.sort()
-    merge_files(file_id, filenames)
+    file_names.sort()
+    merge_files(file_id, file_names)
 
     # Delete temp files.
-    for f in filenames:
+    for f in file_names:
         os.remove(f)
 
     # Decode file.
@@ -100,8 +99,8 @@ def download_file(file_id, output_name=None):
 
 
 # File functions.
-def merge_files(output_name, filenames):
-    fin = fileinput.input(filenames)
+def merge_files(output_name, file_names):
+    fin = fileinput.input(file_names)
     with open(output_name, 'w') as fout:
         for line in fin:
             fout.write(line)
@@ -112,12 +111,12 @@ def merge_files(output_name, filenames):
 # GoogleDriveFile accessors.
 def get_property(name, file_obj, return_value=False):
     elements = filter(lambda x: x['key'] == name, file_obj.get('properties'))
-    returnObj = elements[0] if len(elements) else None
+    return_obj = elements[0] if len(elements) else None
 
     # Return the value if requested.
-    if returnObj and return_value:
-        returnObj = returnObj['value']
-    return returnObj
+    if return_obj and return_value:
+        return_obj = return_obj['value']
+    return return_obj
 
 
 if __name__ == '__main__':

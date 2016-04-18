@@ -7,6 +7,14 @@ File Splitter; code taken from: [StackOverflow Answer](http://stackoverflow.com/
 
 
 def getfilesize(filename):
+    """
+    Return file size in bytes.
+    Args:
+        filename: The name of the file.
+
+    Returns:
+        Size of file in bytes.
+    """
     with open(filename, "rb") as fr:
         fr.seek(0, 2)  # move to end of the file
         size = fr.tell()
@@ -15,6 +23,15 @@ def getfilesize(filename):
 
 
 def splitfile(filename, splitsize):
+    """
+    Splits a file into splitsize-sized chunks
+    Args:
+        filename: Name of the file to be split.
+        splitsize: Size of each splitted component in bytes.
+
+    Returns:
+        int - Number of file chunks.
+    """
     # Open original file in read only mode
     if not os.path.isfile(filename):
         print("No such file as: \"%s\"" % filename)
@@ -44,12 +61,3 @@ def splitfile(filename, splitsize):
                         break
             counter += 1
     return n_splits + 1
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Filename or splitsize not provided: Usage:     filesplit.py filename splitsizeinkb ")
-    else:
-        filesize = int(sys.argv[2]) * 1000  # make into kb
-        filename = sys.argv[1]
-        splitfile(filename, filesize)
