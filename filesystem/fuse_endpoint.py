@@ -9,6 +9,7 @@ import stat
 from fuse import FUSE, FuseOSError, Operations
 
 from cloud_interface import file_tree_navigation
+from control import constants
 
 
 class GDriveFuse(Operations):
@@ -37,9 +38,9 @@ class GDriveFuse(Operations):
 
     def access(self, path, mode):
         self._log(u"access called with {} {}".format(path, mode))
-        full_path = self._full_path(path)
-        if not os.access(full_path, mode):
-            raise FuseOSError(errno.EACCES)
+        # full_path = self._full_path(path)
+        # if not os.access(full_path, mode):
+        #     raise FuseOSError(errno.EACCES)
 
     def chmod(self, path, mode):
         self._log(u"chmod called with {} {}".format(path, mode))
@@ -100,7 +101,7 @@ class GDriveFuse(Operations):
             return dict()
 
     def readdir(self, path, fh):
-        print("readdir called with {} {}".format(path, fh))
+        self._log(u"readdir called with {} {}".format(path, fh))
 
         dirents = ['.', '..']
         dirents.extend(self.file_tree_navigator.navigate(path).get_names())
@@ -166,15 +167,25 @@ class GDriveFuse(Operations):
     # ============
 
     def open(self, path, flags):
-        full_path = self._full_path(path)
-        return os.open(full_path, flags)
+        # Check if file is present in cache and download as necessary.
+        curr_el = self.file_tree_navigator.navigate(path).get_current_element()
+        file_name = os.path.basename(path)
+
+        cached_file_path = constants.DECRYPTED_FOLDER_PATH + constants.FILE_PATH_SEPARATOR + file_name  # TODO update.
+
+        # Download file if not present.
+        if not os.path.exists(cached_file_path):
+            curr_el.download_to(cached_file_path)
+
+        # full_path = self._full_path(path)
+        return os.open(cached_file_path, flags)
 
     def create(self, path, mode, fi=None):
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-        os.lseek(fh, offset, os.SEEK_SET)
+        fh = self.open(path, 0)
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):

@@ -1,3 +1,5 @@
+from cloud_interface.file_tree_navigation import structure_fetcher as sf
+
 class FileObject:
     def __init__(self, gdriveFile):
         """
@@ -15,3 +17,8 @@ class FileObject:
 
     def get_id(self):
         return self.file['id']
+
+    def download_to(self, path):
+        fh = open(path, 'w+')
+        fh.close()
+        sf.drive.CreateFile({'id': self.get_id()}).GetContentFile(path)
