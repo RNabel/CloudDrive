@@ -58,7 +58,10 @@ class FileTreeState:
 
     def get_current_element(self):
         if self.valid:
-            return file_object.FileObject(self.currentNode)
+            if isinstance(self.currentNode, pydrive.files.GoogleDriveFile):
+                return file_object.FileObject(self.currentNode)
+            elif isinstance(self.currentNode, dict):
+                return file_object.FileObject(self.currentNode['self'])
         else:
             return False
 
