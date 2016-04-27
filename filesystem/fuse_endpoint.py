@@ -6,8 +6,9 @@ import os
 import errno
 import stat
 
-
 from fuse import FUSE, FuseOSError, Operations
+
+from cloud_interface import file_tree_navigation
 
 
 class GDriveFuse(Operations):
@@ -17,6 +18,7 @@ class GDriveFuse(Operations):
 
     def __init__(self, root):
         self.root = root
+        self.file_tree_navigator = file_tree_navigation.FileTreeState('/')
 
     # Helpers
     # =======
@@ -51,46 +53,57 @@ class GDriveFuse(Operations):
 
     def getattr(self, path, fh=None):
         self._log(u"getattr called with {}".format(path))
+        file_obj = self.file_tree_navigator.navigate(path).get_current_element()
+        if file_obj and path != '/':
+            st_fixed = dict({
+                'st_ctime': 1461248557.862982,
+                'st_mtime': 1461248557.7105043,
+                'st_nlink': 1,
+                'st_mode': stat.S_IFREG,
+                'st_size': 399,
+                'st_gid': 10030,
+                'st_uid': 17640,
+                'st_atime': 1461248577.5776684
+            })
 
-        st_fixed = dict({
-            'st_ctime': 1461248557.862982,
-            'st_mtime': 1461248557.7105043,
-            'st_nlink': 1,
-            'st_mode': stat.S_IFREG,
-            'st_size': 399,
-            'st_gid': 10030,
-            'st_uid': 17640,
-            'st_atime': 1461248577.5776684
-        })
+            # Reference document [here](https://docs.python.org/2/library/stat.html)
+            # Set size.
+            st_fixed['st_size'] = 1000
 
-        # Reference document [here](https://docs.python.org/2/library/stat.html)
-        # Set size.
-        st_fixed['st_size'] = 1000
+            # Set access rights
+            is_folder = file_obj.is_folder()
+            if is_folder:
+                st_fixed['st_mode'] = stat.S_IFDIR
+            else:
+                st_fixed['st_mode'] = stat.S_IFREG
+            # Grant full permissions.
+            st_fixed['st_mode'] |= stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
-        # Set access rights
-        is_file = True
-        if is_file:
-            st_fixed['st_mode'] = stat.S_IFREG
+            # Set last status change time.
+            st_fixed['st_ctime'] = 1461787306
+
+            # Set last access time
+            st_fixed['st_mtime'] = 1461787306
+            return st_fixed
+        elif path == '/':
+            return dict({
+                'st_ctime': 1461248557.862982,
+                'st_mtime': 1461248557.7105043,
+                'st_nlink': 1,
+                'st_mode': 16877,
+                'st_size': 399,
+                'st_gid': 10030,
+                'st_uid': 17640,
+                'st_atime': 1461248577.5776684
+            })
         else:
-            st_fixed['st_mode'] = stat.S_IFDIR
-        # Grant full permissions.
-        st_fixed['st_mode'] |= stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
-
-        # Root has special privileges.
-        if path == u'/':
-            st_fixed['st_mode'] = 16877
-
-        return st_fixed
+            return dict()
 
     def readdir(self, path, fh):
         print("readdir called with {} {}".format(path, fh))
 
-        full_path = self._full_path(path)
-
         dirents = ['.', '..']
-        dirents.extend(['hello', 'world'])
-        # if os.path.isdir(full_path):
-        #     dirents.extend(os.listdir(full_path))
+        dirents.extend(self.file_tree_navigator.navigate(path).get_names())
         for r in dirents:
             yield r
 
@@ -104,6 +117,7 @@ class GDriveFuse(Operations):
         else:
             return pathname
 
+    # Creates a special or ordinary file - used by touch and similar.
     def mknod(self, path, mode, dev):
         self._log(u"mknod called with {}".format(str(path), str(mode), str(dev)))
         return os.mknod(self._full_path(path), mode, dev)

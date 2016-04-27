@@ -1,9 +1,10 @@
 # Remote storage constants.
 import os
+import secrets
 
 FILE_PATH_SEPARATOR = "/"  # Remote file path separator.
 
-PROJECT_FOLDER = ''
+PROJECT_FOLDER = secrets.PROJECT_FOLDER
 
 # Encryption related constants.
 ENCRYPTED_FLAG = "encrypted"

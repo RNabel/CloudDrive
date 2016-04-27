@@ -1,4 +1,6 @@
 import os
+import control.constants
+
 import filesystem.fuse_endpoint
 
 # Folders used to store local files.
@@ -16,10 +18,8 @@ def initialise_fuse(mount_point, content_folder):
 
 if __name__ == "__main__":
     # TODO check the input args and start CLI or fuse as appropriate.
-    useCLI = True
+    useCLI = False
 
-    if useCLI:
-        cli.start_cli()
-    else:
-        # test start the fuse system.
-        initialise_fuse("/home/robin/fuse_mount", "/home/robin/fuse_content")
+    mountpoint = '/cs/scratch/rn30/mnt'
+    root = '/cs/home/rn30/Downloads'
+    initialise_fuse(mountpoint, root)

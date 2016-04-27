@@ -5,6 +5,7 @@ from cloud_interface.file_tree_navigation import FileTreeState
 from pydrive.files import GoogleDriveFile
 import secrets
 
+
 class TestFileTreeNavigation(unittest.TestCase):
     def setUp(self):
         super(TestFileTreeNavigation, self).setUp()
@@ -49,7 +50,7 @@ class TestFileTreeNavigation(unittest.TestCase):
             self.assertTrue(name in returned_names)
 
     def test_get_names_encrypted_mixed(self):
-                # Create encrypted names.
+        # Create encrypted names.
         encryptor = Encryptor(secrets.password)
         encryptor.cipher_storage.create_cipher()
 

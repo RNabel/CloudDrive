@@ -8,7 +8,7 @@ from cloud_interface import drive
 import control.constants
 import encryption
 
-metadata_storage_path = '/home/robin/PycharmProjects/CloudDrive/meta_data.txt'
+metadata_storage_path = control.constants.PROJECT_FOLDER + '/meta_data.txt'
 
 
 # File structure.
