@@ -37,7 +37,7 @@ class FileTreeState:
         """
         if self.valid:
             output = []
-            for key in self.currentNode.keys():
+            for key in  [x for x in self.currentNode.keys() if x not in ['parent', 'self']]:
                 current_el = self.currentNode[key]
                 if not isinstance(current_el, pydrive.files.GoogleDriveFile):
                     continue
