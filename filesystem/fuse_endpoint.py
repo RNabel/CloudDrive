@@ -51,8 +51,7 @@ class GDriveFuse(Operations):
 
     def getattr(self, path, fh=None):
         self._log(u"getattr called with {}".format(path))
-        full_path = self._full_path(path)
-        st = os.lstat(full_path)
+
         st_fixed = dict({
             'st_ctime': 1461248557.862982,
             'st_mtime': 1461248557.7105043,
@@ -64,12 +63,23 @@ class GDriveFuse(Operations):
             'st_atime': 1461248577.5776684
         })
 
+        # Reference document [here](https://docs.python.org/2/library/stat.html)
+        # Set size.
+        st_fixed['st_size'] = 1000
+
+        # Set access rights
+        is_file = True
+        if is_file:
+            st_fixed['st_mode'] = stat.S_IFREG
+        else:
+            st_fixed['st_mode'] = stat.S_IFDIR
+        # Grant full permissions.
+        st_fixed['st_mode'] |= stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+
+        # Root has special privileges.
         if path == u'/':
             st_fixed['st_mode'] = 16877
 
-        tmp = dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
-                                                        'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size',
-                                                        'st_uid'))
         return st_fixed
 
     def readdir(self, path, fh):
@@ -78,8 +88,9 @@ class GDriveFuse(Operations):
         full_path = self._full_path(path)
 
         dirents = ['.', '..']
-        if os.path.isdir(full_path):
-            dirents.extend(os.listdir(full_path))
+        dirents.extend(['hello', 'world'])
+        # if os.path.isdir(full_path):
+        #     dirents.extend(os.listdir(full_path))
         for r in dirents:
             yield r
 
