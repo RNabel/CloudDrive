@@ -32,11 +32,14 @@ class GDriveFuse(Operations):
     def _log(self, text):
         print(text)
 
-    def _cache_file(self, path, fh_id):
+    def _cache_file(self, path, fh_id=None):
         # Check if file is present in cache and download as necessary.
-        if fh_id not in self.open_file_table:
+        if fh_id and fh_id not in self.open_file_table:
             flags = self.open_file_table_flags[fh_id]
             self.open_file_table[fh_id] = self.downloader.download_file(path, self.file_tree_navigator, fh_id, flags)
+            return self.open_file_table[fh_id]
+        else:
+            return self.downloader.download_file(path, self.file_tree_navigator, fh_id, 0)
 
     def _full_path(self, partial):
         if partial.startswith("/"):
@@ -209,13 +212,14 @@ class GDriveFuse(Operations):
         try:
             fptr = self.open_file_table[fh]
         except Exception as e:
-            self._cache_file(path, fh)
-            fptr = self.open_file_table[fh]
-        fptr.truncate(length)
+            fptr = self._cache_file(path, fh)
+        os.ftruncate(fptr, length)
+        # fptr.truncate(length) has to be python file object.
 
     def flush(self, path, fh):
-        fptr = self.open_file_table[fh]
-        return os.fsync(fptr)
+        # fptr = self.open_file_table[fh]
+        # return os.fsync(fptr)
+        return 0
 
     def release(self, path, fh):
         # Delete entry in open file table.
