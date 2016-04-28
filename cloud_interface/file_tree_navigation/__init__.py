@@ -37,15 +37,24 @@ class FileTreeState:
         """
         if self.valid:
             output = []
-            for key in  [x for x in self.currentNode.keys() if x not in ['parent', 'self']]:
+            for key in [x for x in self.currentNode.keys() if x not in ['parent', 'self']]:
                 current_el = self.currentNode[key]
+                # Ignore object if incorrect instance type.
                 if not isinstance(current_el, pydrive.files.GoogleDriveFile):
                     continue
-                if type == 1 and sf.is_folder(current_el) or \
-                                        type == 2 and not sf.is_folder(current_el):
+
+                # Check if is correct file (i.e. mimetype, ignoring Google Drive specific file types).
+                is_file = sf.is_file(current_el)
+                is_folder = sf.is_folder(current_el)
+
+                if is_file or is_folder:
+                    if type == 0 or \
+                            type == 1 and is_file or \
+                            type == 2 and is_folder:
+                        output.append(current_el)
+                else:
                     continue
 
-                output.append(current_el)
             if name:
                 for element in output:
                     if element['title'] == name:

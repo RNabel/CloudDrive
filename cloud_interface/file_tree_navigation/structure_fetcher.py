@@ -114,6 +114,10 @@ def is_folder(file_object):
     return file_object.metadata['mimeType'] == u"application/vnd.google-apps.folder"
 
 
+def is_file(file_object):
+    return u"application/vnd.google-apps" not in file_object.metadata['mimeType']
+
+
 # Accessor methods.
 def get_children(identifier, is_path):
     # TODO check for root special case.

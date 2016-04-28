@@ -57,19 +57,15 @@ class GDriveFuse(Operations):
         file_obj = self.file_tree_navigator.navigate(path).get_current_element()
         if file_obj and path != '/':
             st_fixed = dict({
-                'st_ctime': 1461248557.862982,
-                'st_mtime': 1461248557.7105043,
                 'st_nlink': 1,
-                'st_mode': stat.S_IFREG,
-                'st_size': 399,
-                'st_gid': 10030,
-                'st_uid': 17640,
+                'st_gid': os.getgid(),
+                'st_uid': os.getuid(),
                 'st_atime': 1461248577.5776684
             })
 
             # Reference document [here](https://docs.python.org/2/library/stat.html)
             # Set size.
-            st_fixed['st_size'] = 1000
+            st_fixed['st_size'] = file_obj.get_size()
 
             # Set access rights
             is_folder = file_obj.is_folder()
@@ -81,10 +77,10 @@ class GDriveFuse(Operations):
             st_fixed['st_mode'] |= stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
 
             # Set last status change time.
-            st_fixed['st_ctime'] = 1461787306
+            st_fixed['st_ctime'] = file_obj.get_ctime()
 
             # Set last access time
-            st_fixed['st_mtime'] = 1461787306
+            st_fixed['st_mtime'] = file_obj.get_mtime()
             return st_fixed
         elif path == '/':
             return dict({
