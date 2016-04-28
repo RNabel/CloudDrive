@@ -3,8 +3,8 @@
 from __future__ import with_statement
 
 import os
-import errno
 import stat
+import uuid
 
 from fuse import FUSE, FuseOSError, Operations
 
@@ -20,12 +20,27 @@ class GDriveFuse(Operations):
     def __init__(self, root):
         self.root = root
         self.file_tree_navigator = file_tree_navigation.FileTreeState('/')
+        self.open_file_table = {}
+        self.open_file_table_flags = {}
 
     # Helpers
     # =======
 
     def _log(self, text):
         print(text)
+
+    def _cache_file(self, path, flags, fh_id):
+        # Check if file is present in cache and download as necessary.
+        if fh_id not in self.open_file_table:
+            curr_el = self.file_tree_navigator.navigate(path).get_current_element()
+
+            cached_file_path = constants.DECRYPTED_FOLDER_PATH + constants.FILE_PATH_SEPARATOR + str(fh_id)
+
+            # Download file.
+            curr_el.download_to(cached_file_path)
+            os.chmod(cached_file_path, 0o777)
+
+            self.open_file_table[fh_id] = os.open(cached_file_path, flags)
 
     def _full_path(self, partial):
         if partial.startswith("/"):
@@ -38,9 +53,6 @@ class GDriveFuse(Operations):
 
     def access(self, path, mode):
         self._log(u"access called with {} {}".format(path, mode))
-        # full_path = self._full_path(path)
-        # if not os.access(full_path, mode):
-        #     raise FuseOSError(errno.EACCES)
 
     def chmod(self, path, mode):
         self._log(u"chmod called with {} {}".format(path, mode))
@@ -164,32 +176,34 @@ class GDriveFuse(Operations):
     # ============
 
     def open(self, path, flags):
-        # Check if file is present in cache and download as necessary.
-        curr_el = self.file_tree_navigator.navigate(path).get_current_element()
-        file_name = os.path.basename(path)
-
-        cached_file_path = constants.DECRYPTED_FOLDER_PATH + constants.FILE_PATH_SEPARATOR + file_name  # TODO update.
-
-        # Download file if not present.
-        if not os.path.exists(cached_file_path):
-            curr_el.download_to(cached_file_path)
-            os.chmod(cached_file_path, 0777)
-
-        # full_path = self._full_path(path)
-        return os.open(cached_file_path, flags)
+        # Create a new unique fh index.
+        fh = uuid.uuid4().int
+        fh >>= 96
+        self.open_file_table_flags[fh] = flags
+        return fh
 
     def create(self, path, mode, fi=None):
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-        # fh = self.open(path, 0)
-        os.lseek(fh, offset, os.SEEK_SET)
-        return os.read(fh, length)
+        try:
+            fptr = self.open_file_table[fh]
+        except Exception as e:
+            # Download the file if file handle not created.
+            flags = self.open_file_table_flags[fh]
+            self._cache_file(path, flags, fh)
+
+            del self.open_file_table_flags[fh]
+            fptr = self.open_file_table[fh]
+
+        os.lseek(fptr, offset, os.SEEK_SET)
+        return os.read(fptr, length)
 
     def write(self, path, buf, offset, fh):
-        os.lseek(fh, offset, os.SEEK_SET)
-        return os.write(fh, buf)
+        fptr = self.open_file_table[fh]
+        os.lseek(fptr, offset, os.SEEK_SET)
+        return os.write(fptr, buf)
 
     def truncate(self, path, length, fh=None):
         full_path = self._full_path(path)
@@ -197,13 +211,18 @@ class GDriveFuse(Operations):
             f.truncate(length)
 
     def flush(self, path, fh):
-        return os.fsync(fh)
+        fptr = self.open_file_table[fh]
+        return os.fsync(fptr)
 
     def release(self, path, fh):
-        return os.close(fh)
+        # Delete entry in open file table.
+        fptr = self.open_file_table[fh]
+        del self.open_file_table[fh]
+        return os.close(fptr)
 
     def fsync(self, path, fdatasync, fh):
-        return self.flush(path, fh)
+        fptr = self.open_file_table[fh]
+        return self.flush(path, fptr)
 
 
 def main(mountpoint, root):
