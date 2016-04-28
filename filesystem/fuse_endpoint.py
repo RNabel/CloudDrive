@@ -60,13 +60,15 @@ class GDriveFuse(Operations):
                 'st_nlink': 1,
                 'st_gid': os.getgid(),
                 'st_uid': os.getuid(),
+                'st_blocks': 1,
                 'st_atime': 1461248577.5776684
             })
 
             # Reference document [here](https://docs.python.org/2/library/stat.html)
             # Set size.
             st_fixed['st_size'] = file_obj.get_size()
-
+            st_fixed['st_blocks'] = 1550
+            # st_fixed['st_blocks'] = st_fixed['st_size'] // 512 + 1
             # Set access rights
             is_folder = file_obj.is_folder()
             if is_folder:
@@ -172,6 +174,7 @@ class GDriveFuse(Operations):
         # Download file if not present.
         if not os.path.exists(cached_file_path):
             curr_el.download_to(cached_file_path)
+            os.chmod(cached_file_path, 0777)
 
         # full_path = self._full_path(path)
         return os.open(cached_file_path, flags)
