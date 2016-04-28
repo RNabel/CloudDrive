@@ -8,7 +8,7 @@ import uuid
 
 from fuse import FUSE, FuseOSError, Operations
 
-from cloud_interface import file_tree_navigation
+from cloud_interface import file_tree_navigation, downloader, uploader
 from control import constants
 
 
@@ -23,24 +23,20 @@ class GDriveFuse(Operations):
         self.open_file_table = {}
         self.open_file_table_flags = {}
 
+        self.downloader = downloader.Downloader()
+        self.uploader = uploader.Uploader()
+
     # Helpers
     # =======
 
     def _log(self, text):
         print(text)
 
-    def _cache_file(self, path, flags, fh_id):
+    def _cache_file(self, path, fh_id):
         # Check if file is present in cache and download as necessary.
         if fh_id not in self.open_file_table:
-            curr_el = self.file_tree_navigator.navigate(path).get_current_element()
-
-            cached_file_path = constants.DECRYPTED_FOLDER_PATH + constants.FILE_PATH_SEPARATOR + str(fh_id)
-
-            # Download file.
-            curr_el.download_to(cached_file_path)
-            os.chmod(cached_file_path, 0o777)
-
-            self.open_file_table[fh_id] = os.open(cached_file_path, flags)
+            flags = self.open_file_table_flags[fh_id]
+            self.open_file_table[fh_id] = self.downloader.download_file(path, self.file_tree_navigator, fh_id, flags)
 
     def _full_path(self, partial):
         if partial.startswith("/"):
@@ -191,24 +187,31 @@ class GDriveFuse(Operations):
             fptr = self.open_file_table[fh]
         except Exception as e:
             # Download the file if file handle not created.
-            flags = self.open_file_table_flags[fh]
-            self._cache_file(path, flags, fh)
-
-            del self.open_file_table_flags[fh]
+            self._cache_file(path, fh)
             fptr = self.open_file_table[fh]
 
         os.lseek(fptr, offset, os.SEEK_SET)
         return os.read(fptr, length)
 
     def write(self, path, buf, offset, fh):
-        fptr = self.open_file_table[fh]
+        try:
+            fptr = self.open_file_table[fh]
+        except Exception as e:
+            self._cache_file(path, fh)
+            fptr = self.open_file_table[fh]
+
         os.lseek(fptr, offset, os.SEEK_SET)
-        return os.write(fptr, buf)
+        ret_value = os.write(fptr, buf)
+        self.uploader.upload_file(path, self.file_tree_navigator, fh)
+        return ret_value
 
     def truncate(self, path, length, fh=None):
-        full_path = self._full_path(path)
-        with open(full_path, 'r+') as f:
-            f.truncate(length)
+        try:
+            fptr = self.open_file_table[fh]
+        except Exception as e:
+            self._cache_file(path, fh)
+            fptr = self.open_file_table[fh]
+        fptr.truncate(length)
 
     def flush(self, path, fh):
         fptr = self.open_file_table[fh]
@@ -216,9 +219,13 @@ class GDriveFuse(Operations):
 
     def release(self, path, fh):
         # Delete entry in open file table.
-        fptr = self.open_file_table[fh]
-        del self.open_file_table[fh]
-        return os.close(fptr)
+        try:
+            fptr = self.open_file_table[fh]
+            del self.open_file_table_flags[fh]
+            del self.open_file_table[fh]
+            return os.close(fptr)
+        except Exception as e:
+            return 0
 
     def fsync(self, path, fdatasync, fh):
         fptr = self.open_file_table[fh]

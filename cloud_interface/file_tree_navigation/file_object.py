@@ -29,6 +29,9 @@ class FileObject:
         else:
             return int(self.file['quotaBytesUsed'])
 
+    def get_mimetype(self):
+        return self.file.metadata['mimeType']
+
     def _convert_date_to_unix(self, date_string):
         dt = datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
         return (dt - datetime.datetime(1970, 1, 1)).total_seconds()
@@ -43,3 +46,13 @@ class FileObject:
         fh = open(path, 'w+')
         fh.close()
         sf.drive.CreateFile({'id': self.get_id()}).GetContentFile(path)
+
+    def upload_content(self, path):
+        if self.is_file():
+            drive_file = sf.drive.CreateFile({
+                'id': self.get_id(),
+                'mimeType': self.get_mimetype()
+            })
+            drive_file.SetContentFile(path)
+
+            drive_file.Upload()

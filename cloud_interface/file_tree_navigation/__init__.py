@@ -76,7 +76,6 @@ class FileTreeState:
 
     def get_names(self, type=0):
         contents = self.get_current_contents(type)
-        # return [(x[DECRYPTED_TITLE], x) if DECRYPTED_TITLE in x else (x['title'], x) for x in contents]
         return [y[DECRYPTED_TITLE] if DECRYPTED_TITLE in y else y['title'] for y in contents]
 
     def change_path(self, new_folder):
@@ -94,6 +93,7 @@ class FileTreeState:
 
             # Update current node.
             self.currentNode = self.currentNode["parent"]
+            return True
 
         else:
             # Check if current element is folder.
