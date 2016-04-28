@@ -67,8 +67,7 @@ class GDriveFuse(Operations):
             # Reference document [here](https://docs.python.org/2/library/stat.html)
             # Set size.
             st_fixed['st_size'] = file_obj.get_size()
-            st_fixed['st_blocks'] = 1550
-            # st_fixed['st_blocks'] = st_fixed['st_size'] // 512 + 1
+            st_fixed['st_blocks'] = st_fixed['st_size'] // 512 + 1
             # Set access rights
             is_folder = file_obj.is_folder()
             if is_folder:
@@ -184,7 +183,8 @@ class GDriveFuse(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-        fh = self.open(path, 0)
+        # fh = self.open(path, 0)
+        os.lseek(fh, offset, os.SEEK_SET)
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
