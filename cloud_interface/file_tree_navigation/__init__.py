@@ -4,7 +4,10 @@ import pydrive.files
 
 from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TITLE
 from encryption.encryptor import Encryptor
+from cloud_interface import drive
 import file_object
+import open_file_wrapper
+import filesystem.decrypted_data_storage
 import secrets
 
 
@@ -15,6 +18,8 @@ class FileTreeState:
         self.currentNodeID = "root"
         self.currentPath = current_path
         self.valid = True
+
+        self.file_cache = filesystem.decrypted_data_storage.DecryptedDataStorage()
 
         # Load metadata.
         meta_data_list = update_metadata()
@@ -49,8 +54,8 @@ class FileTreeState:
 
                 if is_file or is_folder:
                     if type == 0 or \
-                            type == 1 and is_file or \
-                            type == 2 and is_folder:
+                                            type == 1 and is_file or \
+                                            type == 2 and is_folder:
                         output.append(current_el)
                 else:
                     continue
@@ -125,6 +130,17 @@ class FileTreeState:
         # TODO implement additional accessors to deal with encrypted names.
         #   If encrypted name encountered add attribute indicating that it it is encoded, and add the decoded name.
 
+    def create_object(self, name):
+        # Create new gdrive file with specified name.
+        new_file = drive.CreateFile({'title': name})
+        new_file.Upload()
+
+        file_obj = file_object.FileObject(new_file)
+        file_id = file_obj.get_id()
+
+        # Create backing file with specified id.
+        # TODO design cache object which keeps track of the cached objects
+
     def navigate(self, path):
         # Reset current node.
         self.currentNode = self.rootNode
@@ -141,6 +157,30 @@ class FileTreeState:
                 break
 
         return self
+
+    # File access points.
+    def open_file(self, path, flags):
+        """
+        Opens a file and returns an OpenFileWrapper object
+        Args:
+            path: The path to the file
+            flags: The flags to open the file with
+        Returns:
+            OpenFileWrapper
+        """
+        # Resolve the path.
+        current_element = self.navigate(path).get_current_element()
+
+        # Request open file handle from cache.
+        os_fptr, cache_state = self.file_cache.open_file(current_element, flags)
+
+        # Wrap up all components.
+        open_file_wrap = open_file_wrapper.OpenFileWrapper(current_element, os_fptr, cache_state)
+
+        return open_file_wrap
+
+    def read(self):
+        pass
 
     def _decrypt_file_names_in_current_folder(self):
         for file_id, file_object in self.currentNode.iteritems():

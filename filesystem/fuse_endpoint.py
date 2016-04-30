@@ -10,6 +10,7 @@ from fuse import FUSE, FuseOSError, Operations
 
 from cloud_interface import file_tree_navigation, downloader, uploader
 from control import constants
+import decrypted_data_storage
 
 
 class GDriveFuse(Operations):
@@ -19,12 +20,15 @@ class GDriveFuse(Operations):
 
     def __init__(self, root):
         self.root = root
-        self.file_tree_navigator = file_tree_navigation.FileTreeState('/')
+        self.file_tree_navigator = file_tree_navigation.FileTreeState()
         self.open_file_table = {}
         self.open_file_table_flags = {}
 
         self.downloader = downloader.Downloader()
         self.uploader = uploader.Uploader()
+        self.decrypted_buffer = decrypted_data_storage.DecryptedDataStorage()
+
+        self._log("Fuse loaded.")
 
     # Helpers
     # =======
@@ -32,14 +36,17 @@ class GDriveFuse(Operations):
     def _log(self, text):
         print(text)
 
-    def _cache_file(self, path, fh_id=None):
+    def _open_file(self, path, fh_id=None):
         # Check if file is present in cache and download as necessary.
         if fh_id and fh_id not in self.open_file_table:
             flags = self.open_file_table_flags[fh_id]
-            self.open_file_table[fh_id] = self.downloader.download_file(path, self.file_tree_navigator, fh_id, flags)
+            self.open_file_table[fh_id] = self.file_tree_navigator.open_file(path, flags)
+            # self.open_file_table[fh_id] = self.downloader.download_file(path, self.file_tree_navigator, fh_id, flags)
             return self.open_file_table[fh_id]
+
         else:
-            return self.downloader.download_file(path, self.file_tree_navigator, fh_id, 0)
+            return self.file_tree_navigator.open_file(path, 0)
+            # return self.downloader.download_file(path, self.file_tree_navigator, fh_id, 0)
 
     def _full_path(self, partial):
         if partial.startswith("/"):
@@ -55,13 +62,11 @@ class GDriveFuse(Operations):
 
     def chmod(self, path, mode):
         self._log(u"chmod called with {} {}".format(path, mode))
-        full_path = self._full_path(path)
-        return os.chmod(full_path, mode)
+        return 0
 
     def chown(self, path, uid, gid):
         self._log(u"chown called with {} {} {}".format(path, uid, gid))
-        full_path = self._full_path(path)
-        return os.chown(full_path, uid, gid)
+        return 0
 
     def getattr(self, path, fh=None):
         self._log(u"getattr called with {}".format(path))
@@ -175,33 +180,40 @@ class GDriveFuse(Operations):
     # ============
 
     def open(self, path, flags):
+        self._log(u"access called with {} {}".format(path, flags))
         # Create a new unique fh index.
         fh = uuid.uuid4().int
-        fh >>= 96
+        fh >>= 96  # Convert 128-bit UUID into 32-bit int.
         self.open_file_table_flags[fh] = flags
         return fh
 
     def create(self, path, mode, fi=None):
-        full_path = self._full_path(path)
+        self._log(u"access called with {} {} {}".format(path, mode, fi))
+        dir_name = os.path.dirname(path)
+        file_name = os.path.basename(path)
+        self.file_tree_navigator.navigate(dir_name).create_object(file_name)
+
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
+        self._log(u"access called with {} {} {} {}".format(path, length, offset, fh))
         try:
-            fptr = self.open_file_table[fh]
+            fptr = self.open_file_table[fh].get_file_handle()
         except Exception as e:
             # Download the file if file handle not created.
-            self._cache_file(path, fh)
-            fptr = self.open_file_table[fh]
+            open_file_wrapper = self._open_file(path, fh)
+            fptr = open_file_wrapper.get_file_handle()
 
         os.lseek(fptr, offset, os.SEEK_SET)
         return os.read(fptr, length)
 
     def write(self, path, buf, offset, fh):
+        self._log(u"access called with {} {} {} {}".format(path, buf, offset, fh))
         try:
             fptr = self.open_file_table[fh]
         except Exception as e:
-            self._cache_file(path, fh)
-            fptr = self.open_file_table[fh]
+            open_file_wrapper = self._open_file(path, fh)
+            fptr = open_file_wrapper.get_file_handle()
 
         os.lseek(fptr, offset, os.SEEK_SET)
         ret_value = os.write(fptr, buf)
@@ -209,19 +221,22 @@ class GDriveFuse(Operations):
         return ret_value
 
     def truncate(self, path, length, fh=None):
+        self._log(u"access called with {} {} {}".format(path, length, fh))
         try:
             fptr = self.open_file_table[fh]
         except Exception as e:
-            fptr = self._cache_file(path, fh)
+            fptr = self._open_file(path, fh)
         os.ftruncate(fptr, length)
         # fptr.truncate(length) has to be python file object.
 
     def flush(self, path, fh):
+        self._log(u"access called with {} {}".format(path, fh))
         # fptr = self.open_file_table[fh]
         # return os.fsync(fptr)
         return 0
 
     def release(self, path, fh):
+        self._log(u"access called with {} {}".format(path, fh))
         # Delete entry in open file table.
         try:
             fptr = self.open_file_table[fh]
@@ -232,6 +247,7 @@ class GDriveFuse(Operations):
             return 0
 
     def fsync(self, path, fdatasync, fh):
+        self._log(u"access called with {} {} {}".format(path, fdatasync, fh))
         fptr = self.open_file_table[fh]
         return self.flush(path, fptr)
 
