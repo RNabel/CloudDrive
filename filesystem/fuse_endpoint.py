@@ -11,6 +11,7 @@ from fuse import FUSE, FuseOSError, Operations
 
 from cloud_interface import file_tree_navigation, downloader, uploader
 import decrypted_data_storage
+from cloud_interface.file_tree_navigation import AboutObject
 
 
 class GDriveFuse(Operations):
@@ -26,6 +27,7 @@ class GDriveFuse(Operations):
         self.downloader = downloader.Downloader()
         self.uploader = uploader.Uploader()
         self.decrypted_buffer = decrypted_data_storage.DecryptedDataStorage(decrypted_folder_path=temp_storage_path)
+        self.about = AboutObject()
 
         self._log("Fuse loaded.")
 
@@ -144,8 +146,18 @@ class GDriveFuse(Operations):
 
     def statfs(self, path):
         self._log(u"statfs called with {}".format(str(path)))
-        raise FuseOSError(errno.ENOSYS)
-        # stv = os.statvfs(full_path)
+        block_size = 512
+        total_blocks = self.about.get_total_bytes() // block_size + 1
+        used_blocks = self.about.get_used_bytes() // block_size + 1
+        free_blocks = total_blocks - used_blocks
+
+        ret_dict = {
+            'f_bsize': block_size,
+            'f_blocks': total_blocks,
+            'f_bfree': free_blocks,
+            'f_bavail': free_blocks
+        }
+        return ret_dict
         # return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
         #                                                  'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files',
         #                                                  'f_flag',

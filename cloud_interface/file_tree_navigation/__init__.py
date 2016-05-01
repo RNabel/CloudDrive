@@ -6,6 +6,7 @@ from cloud_interface import drive
 import structure_fetcher as sf
 import pydrive.files
 
+from cloud_interface.file_tree_navigation.about_object import AboutObject
 from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TITLE
 import control.constants as constants
 from encryption.encryptor import Encryptor
