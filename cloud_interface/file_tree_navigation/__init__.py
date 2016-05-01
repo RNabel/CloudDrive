@@ -1,10 +1,14 @@
+import threading
+
 import os
+import time
 
 from structure_fetcher import metadata_storage_path, update_metadata
 import structure_fetcher as sf
 import pydrive.files
 
 from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TITLE
+import control.constants as constants
 from encryption.encryptor import Encryptor
 import file_object
 import open_file_wrapper
@@ -31,6 +35,10 @@ class FileTreeState:
 
         # Set up encryptor.
         self.encryptor = Encryptor(secrets.password)
+
+        # Set up file tree updater.
+        self.update_thread = FileTreeUpdater(self)
+        self.update_thread.start()
 
     def get_current_contents(self, type=0, name=None):
         """
@@ -206,3 +214,28 @@ class FileTreeState:
 
                 except Exception as e:
                     file_object["encrypted"] = False
+
+    def tear_down(self):
+        # End worker threads.
+        self.update_thread.set_stop_flag()
+        self.update_thread.join()
+        # Save metadata.
+        return 0
+
+
+class FileTreeUpdater(threading.Thread):
+    def __init__(self, file_tree_navigator):
+        threading.Thread.__init__(self)
+        self.stop = threading.Event()
+        self.loop = threading.Event()
+        self.file_tree_navigator = file_tree_navigator
+
+    def set_stop_flag(self):
+        self.stop.set()
+        self.loop.set()
+
+    def run(self):
+        while not self.stop.is_set():
+            self.loop.wait(constants.UPDATE_INTERVAL)
+            print "Updating metadata."
+            # TODO update request here.

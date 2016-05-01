@@ -179,8 +179,8 @@ class GDriveFuse(Operations):
 
     def utimens(self, path, times=None):
         self._log(u"utimens called with {} {}".format(str(path), str(times)))
-
-        return os.utime(self._full_path(path), times)
+        # TODO implement.
+        return 0
 
     # File methods
     # ============
@@ -247,7 +247,7 @@ class GDriveFuse(Operations):
         self._log(u"release called with {} {}".format(path, fh))
         # Delete entry in open file table.
         try:
-            fptr = self.open_file_table[fh]
+            fptr = self.open_file_table[fh].get_file_handle()
             del self.open_file_table_flags[fh]
             del self.open_file_table[fh]
             return os.close(fptr)
@@ -259,9 +259,17 @@ class GDriveFuse(Operations):
         fptr = self.open_file_table[fh]
         return self.flush(path, fptr)
 
+    # Tear-down method.
+    def tear_down(self):
+        # Notify file tree of shut-down.
+        exit_code = self.file_tree_navigator.tear_down()
+        return exit_code
+
 
 def main(mountpoint, root):
-    FUSE(GDriveFuse(root), mountpoint, nothreads=True, foreground=True)
+    gdriveFuse = GDriveFuse(root)
+    FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True)
+    return gdriveFuse
 
 
 if __name__ == '__main__':

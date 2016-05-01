@@ -39,6 +39,7 @@ class DecryptedDataStorage:
         os_fptr = os.open(cached_file_path, flags, mode)
 
         return os_fptr, None
+
     # Getters and setters
     # ===================
     def get_encrypted_folder(self):
