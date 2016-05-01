@@ -23,31 +23,30 @@ def initialise_fuse(mount_point, content_folder):
 
 
 # Register kill signal handler.
-def sig_kill_handler(signal, frame):
+def tear_down(signal=None, frame=None):
     print "Got SIGTERM/SIGINT"
     # Forward instruction to tear down.
     exit_code = fuse_object.tear_down()
+
+    print "Tear-down done, exiting."
     # Provide exit code
     sys.exit(exit_code)
 
-
-signal.signal(signal.SIGTERM, sig_kill_handler)
-signal.signal(signal.SIGINT, sig_kill_handler)
-signal.signal(signal.SIGUSR1, sig_kill_handler)
-signal.signal(signal.SIGUSR2, sig_kill_handler)
-signal.signal(signal.SIGQUIT, sig_kill_handler)
-signal.signal(signal.SIGALRM, sig_kill_handler)
+# These are not working since fusepy runs a C-level loop, which can not be interrupted with Python-level interrupts.
+# Event handlers in action while fuse not running, so setup can be used in future iterations.
+signal.signal(signal.SIGTERM, tear_down)
+signal.signal(signal.SIGINT, tear_down)
+signal.signal(signal.SIGUSR1, tear_down)
+signal.signal(signal.SIGUSR2, tear_down)
+signal.signal(signal.SIGQUIT, tear_down)
+signal.signal(signal.SIGALRM, tear_down)
 
 if __name__ == "__main__":
     useCLI = False
 
     mountpoint = '/cs/scratch/rn30/mnt'
     root = '/cs/home/rn30/Downloads'
-    try:
-        initialise_fuse(mountpoint, root)
-    except (KeyboardInterrupt, SystemExit):
-        print "Oops"
-        sig_kill_handler(None, None)
+    initialise_fuse(mountpoint, root)
 
     # Clean up on shut-down.
-    sig_kill_handler(None, None)
+    tear_down()

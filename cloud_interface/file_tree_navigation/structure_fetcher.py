@@ -43,8 +43,8 @@ def update_metadata():
     else:
         fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
         pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
-    # Read all files into dictionary.
 
+    # Read all files into dictionary.
     fcb_dict = dict()
     for file1 in fcb_list:
         fcb_dict[file1['id']] = file1
@@ -67,10 +67,13 @@ def _get_children_from_list(parent_id, file_list=fcb_list):
     """
     if parent_id and parent_id != 'root':
         return [x for
-                x in fcb_list
+                x in file_list
                 if parent_id in [y['id'] for y in x['parents']]]
     else:  # If no parent_id specified return all files with root as parent.
-        return [x for x in fcb_list if len(x['parents']) and len([y for y in x['parents'] if y['isRoot'] == True])]
+        return [x for
+                x in file_list
+                if len(x['parents']) and len([y for y in x['parents']
+                         if y['isRoot'] == True])]
 
 
 def _get_folders_from_list(file_list):

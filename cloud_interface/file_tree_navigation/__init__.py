@@ -11,6 +11,7 @@ from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TIT
 import control.constants as constants
 from encryption.encryptor import Encryptor
 import file_object
+import meta_data
 import open_file_wrapper
 import filesystem.decrypted_data_storage
 import secrets
@@ -27,10 +28,15 @@ class FileTreeState:
         self.file_cache = filesystem.decrypted_data_storage.DecryptedDataStorage()
 
         # Load metadata.
-        meta_data_list = update_metadata()
+        self.metadata_wrapper = meta_data.MetaDataWrapper(self.file_tree)
+        meta_data_list = self.metadata_wrapper.load()
 
-        sf.convert_list_to_tree(self.file_tree, meta_data_list, 'root', self.file_tree)
+        if meta_data_list is not True:
+            sf.convert_list_to_tree(self.metadata_wrapper.file_tree,
+                                    meta_data_list, 'root',
+                                    self.metadata_wrapper.file_tree)
 
+        self.file_tree = self.metadata_wrapper.file_tree
         self.rootNode = self.file_tree
 
         # Set up encryptor.
@@ -220,6 +226,8 @@ class FileTreeState:
         self.update_thread.set_stop_flag()
         self.update_thread.join()
         # Save metadata.
+        print "Saving metadata."
+        self.metadata_wrapper.save()
         return 0
 
 
