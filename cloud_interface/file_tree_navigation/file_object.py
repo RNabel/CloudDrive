@@ -5,7 +5,7 @@ import cloud_interface
 
 
 class FileObject:
-    def __init__(self, gdriveFile=None, file_name=None, parent_id=None):
+    def __init__(self, gdriveFile=None, file_name=None, parent_id=None, is_folder=False):
         """
 
         Args:
@@ -17,18 +17,24 @@ class FileObject:
                 if gdriveFile == 'root':
                     self.file = {'id': 'root',
                                  'metadata': {
-                                    'mimeType': 'application/vnd.google-apps.folder'
-                                    }
+                                     'mimeType': 'application/vnd.google-apps.folder'
+                                 }
                                  }
                 else:
                     self.file = gdriveFile
             else:
                 # Create new GDrive object, and Upload it to fill the ID field.
-                new_file = cloud_interface.drive.CreateFile({
+                params = {
                     "parents": [{"kind": "drive#fileLink",
                                  "id": parent_id}],
                     'title': file_name
-                })
+                }
+
+                if is_folder:
+                    params['mimeType'] = "application/vnd.google-apps.folder"
+                    params["parents"] = [{"id": parent_id}]
+
+                new_file = cloud_interface.drive.CreateFile(params)
 
                 new_file.Upload()
                 self.file = new_file

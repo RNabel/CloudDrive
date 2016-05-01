@@ -20,7 +20,10 @@ class MetaDataWrapper:
         # Saves file tree and last update.
         if self.dirty or self.first_load:
             pickle_obj = self._create_pickle_obj()
-            pickle.dump(pickle_obj, open(self.metadata_storage_path, 'w+'))
+            temp_path = self.metadata_storage_path + "_"
+            pickle.dump(pickle_obj, open(temp_path, 'w+'))
+            os.remove(self.metadata_storage_path)
+            os.rename(temp_path, self.metadata_storage_path)
 
     def load(self):
         # Download metadata of all files.

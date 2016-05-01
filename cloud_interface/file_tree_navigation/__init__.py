@@ -43,7 +43,7 @@ class FileTreeState:
 
         # Set up file tree updater.
         self.update_thread = FileTreeUpdater(self)
-        self.update_thread.start()
+        # self.update_thread.start()
 
     def get_current_contents(self, type=0, name=None):
         """
@@ -144,9 +144,14 @@ class FileTreeState:
         # TODO implement additional accessors to deal with encrypted names.
         #   If encrypted name encountered add attribute indicating that it it is encoded, and add the decoded name.
 
-    def add_file_entry(self, file_obj):
+    def add_file_entry(self, file_obj, is_folder=False):
         file_id = file_obj.get_id()
-        self.currentNode[file_id] = file_obj.file
+        if is_folder:
+            self.currentNode[file_id]['parent'] = self.currentNode
+            self.currentNode[file_id]['self'] = file_obj.file
+            self.currentNode[file_id + "_folder"] = file_obj.file
+        else:
+            self.currentNode[file_id] = file_obj.file
         return self
 
     def remove_current_element(self):
@@ -212,6 +217,16 @@ class FileTreeState:
 
         return open_file_wrap
 
+    def create_folder(self, path, mode):
+        dir_name = os.path.dirname(path)
+        folder_name = os.path.basename(path)
+        par_folder_el = self.navigate(dir_name).get_current_element()
+
+        par_fol_id = par_folder_el.get_id()
+        new_folder = file_object.FileObject(file_name=folder_name, parent_id=par_fol_id, is_folder=True)
+        self.add_file_entry(new_folder, is_folder=True)
+        return new_folder
+
     def read(self):
         pass
 
@@ -230,8 +245,11 @@ class FileTreeState:
 
     def tear_down(self):
         # End worker threads.
-        self.update_thread.set_stop_flag()
-        self.update_thread.join()
+        try:
+            self.update_thread.set_stop_flag()
+            self.update_thread.join()
+        finally:
+            pass
         # Save metadata.
         print "Saving metadata."
         self.metadata_wrapper.save()

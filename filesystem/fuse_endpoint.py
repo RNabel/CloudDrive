@@ -135,7 +135,8 @@ class GDriveFuse(Operations):
 
     def mkdir(self, path, mode):
         self._log(u"mkdir called with {} {}".format(str(path), str(mode)))
-        raise FuseOSError(errno.ENOSYS)
+        open_file_wrap = self.file_tree_navigator.create_folder(path, mode)
+        return 0
 
     def statfs(self, path):
         self._log(u"statfs called with {}".format(str(path)))
