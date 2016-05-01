@@ -10,7 +10,6 @@ import uuid
 from fuse import FUSE, FuseOSError, Operations
 
 from cloud_interface import file_tree_navigation, downloader, uploader
-from control import constants
 import decrypted_data_storage
 
 
@@ -19,15 +18,14 @@ class GDriveFuse(Operations):
     Bundles all functionality of the fuse system.
     """
 
-    def __init__(self, root):
-        self.root = root
+    def __init__(self, temp_storage_path):
         self.file_tree_navigator = file_tree_navigation.FileTreeState()
         self.open_file_table = {}
         self.open_file_table_flags = {}
 
         self.downloader = downloader.Downloader()
         self.uploader = uploader.Uploader()
-        self.decrypted_buffer = decrypted_data_storage.DecryptedDataStorage()
+        self.decrypted_buffer = decrypted_data_storage.DecryptedDataStorage(decrypted_folder_path=temp_storage_path)
 
         self._log("Fuse loaded.")
 
@@ -53,12 +51,6 @@ class GDriveFuse(Operations):
         fh = uuid.uuid4().int
         fh >>= 96  # Convert 128-bit UUID into 32-bit int.
         return fh
-
-    def _full_path(self, partial):
-        if partial.startswith("/"):
-            partial = partial[1:]
-        path = os.path.join(self.root, partial)
-        return path
 
     # Filesystem methods
     # ==================
@@ -105,6 +97,7 @@ class GDriveFuse(Operations):
             # Set last access time
             st_fixed['st_mtime'] = file_obj.get_mtime()
             return st_fixed
+
         elif path == '/':
             return dict({
                 'st_ctime': 1461248557.862982,
@@ -129,53 +122,46 @@ class GDriveFuse(Operations):
 
     def readlink(self, path):
         self._log(u"readlink called with {}".format(path))
-
-        pathname = os.readlink(self._full_path(path))
-        if pathname.startswith("/"):
-            # Path name is absolute, sanitize it.
-            return os.path.relpath(pathname, self.root)
-        else:
-            return pathname
+        raise FuseOSError(errno.ENOSYS)
 
     # Creates a special or ordinary file - used by touch and similar.
     def mknod(self, path, mode, dev):
         self._log(u"mknod called with {}".format(str(path), str(mode), str(dev)))
-        return os.mknod(self._full_path(path), mode, dev)
+        raise FuseOSError(errno.ENOSYS)
 
     def rmdir(self, path):
         self._log(u"rmdir called with {}".format(str(path)))
-        full_path = self._full_path(path)
-        return os.rmdir(full_path)
+        raise FuseOSError(errno.ENOSYS)
+
 
     def mkdir(self, path, mode):
         self._log(u"mkdir called with {} {}".format(str(path), str(mode)))
-        return os.mkdir(self._full_path(path), mode)
+        raise FuseOSError(errno.ENOSYS)
 
     def statfs(self, path):
         self._log(u"statfs called with {}".format(str(path)))
-        full_path = self._full_path(path)
-        stv = os.statvfs(full_path)
-        return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
-                                                         'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files',
-                                                         'f_flag',
-                                                         'f_frsize', 'f_namemax'))
+        raise FuseOSError(errno.ENOSYS)
+        # stv = os.statvfs(full_path)
+        # return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
+        #                                                  'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files',
+        #                                                  'f_flag',
+        #                                                  'f_frsize', 'f_namemax'))
 
     def unlink(self, path):
         self._log(u"unlink called with {}".format(str(path)))
-        return os.unlink(self._full_path(path))
+        raise FuseOSError(errno.ENOSYS)
 
     def symlink(self, name, target):
         self._log(u"symlink called with {} {}".format(str(name), str(target)))
-        return os.symlink(name, self._full_path(target))
+        raise FuseOSError(errno.ENOSYS)
 
     def rename(self, old, new):
         self._log(u"rename called with {} {}".format(str(old), str(new)))
-
-        return os.rename(self._full_path(old), self._full_path(new))
+        raise FuseOSError(errno.ENOSYS)
 
     def link(self, target, name):
         self._log(u"link called with {} {}".format(str(target), str(name)))
-        return os.link(self._full_path(target), self._full_path(name))
+        raise FuseOSError(errno.ENOSYS)
 
     def utimens(self, path, times=None):
         self._log(u"utimens called with {} {}".format(str(path), str(times)))
@@ -266,8 +252,8 @@ class GDriveFuse(Operations):
         return exit_code
 
 
-def main(mountpoint, root):
-    gdriveFuse = GDriveFuse(root)
+def main(mountpoint, temp_storage):
+    gdriveFuse = GDriveFuse(temp_storage)
     FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True)
     return gdriveFuse
 
@@ -275,4 +261,4 @@ def main(mountpoint, root):
 if __name__ == '__main__':
     mountpoint = '/cs/scratch/rn30/mnt'
     root = '/cs/home/rn30/Downloads'
-    main(mountpoint, root)
+    main(mountpoint)

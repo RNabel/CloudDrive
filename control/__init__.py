@@ -13,13 +13,13 @@ DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
 fuse_object = None
 
 
-def initialise_fuse(mount_point, content_folder):
+def initialise_fuse(mount_point, temp_storage):
     global fuse_object
     # Check if the mount point exists, if not create the folder.
     if not os.path.exists(mount_point):
         os.mkdir(mount_point)
 
-    fuse_object = filesystem.fuse_endpoint.main(mount_point, content_folder)
+    fuse_object = filesystem.fuse_endpoint.main(mount_point, temp_storage)
 
 
 # Register kill signal handler.
@@ -44,9 +44,11 @@ signal.signal(signal.SIGALRM, tear_down)
 if __name__ == "__main__":
     useCLI = False
 
-    mountpoint = '/cs/scratch/rn30/mnt'
-    root = '/cs/home/rn30/Downloads'
-    initialise_fuse(mountpoint, root)
+    mount_point = '/home/robin/CloudDrive'
+    temp_storage = '/home/robin/Temp'
+
+    # This function will not return until the process receives a SIGINT or SIGKILL interrupt.
+    initialise_fuse(mount_point, temp_storage)
 
     # Clean up on shut-down.
     tear_down()
