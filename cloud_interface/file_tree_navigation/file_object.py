@@ -14,7 +14,14 @@ class FileObject:
         # Verify input parameters.
         if gdriveFile or file_name and parent_id:
             if gdriveFile:
-                self.file = gdriveFile
+                if gdriveFile == 'root':
+                    self.file = {'id': 'root',
+                                 'metadata': {
+                                    'mimeType': 'application/vnd.google-apps.folder'
+                                    }
+                                 }
+                else:
+                    self.file = gdriveFile
             else:
                 # Create new GDrive object, and Upload it to fill the ID field.
                 new_file = cloud_interface.drive.CreateFile({

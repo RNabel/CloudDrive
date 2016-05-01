@@ -22,7 +22,7 @@ def initialise_fuse(mount_point, temp_storage):
     fuse_object = filesystem.fuse_endpoint.main(mount_point, temp_storage)
 
 
-# Register kill signal handler.
+# Tear down method.
 def tear_down(signal=None, frame=None):
     print "Got SIGTERM/SIGINT"
     # Forward instruction to tear down.
