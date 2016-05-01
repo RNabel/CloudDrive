@@ -1,10 +1,11 @@
+import os
+
 from structure_fetcher import metadata_storage_path, update_metadata
 import structure_fetcher as sf
 import pydrive.files
 
 from control.constants import FILE_PATH_SEPARATOR, ENCRYPTED_FLAG, DECRYPTED_TITLE
 from encryption.encryptor import Encryptor
-from cloud_interface import drive
 import file_object
 import open_file_wrapper
 import filesystem.decrypted_data_storage
@@ -130,16 +131,10 @@ class FileTreeState:
         # TODO implement additional accessors to deal with encrypted names.
         #   If encrypted name encountered add attribute indicating that it it is encoded, and add the decoded name.
 
-    def create_object(self, name):
-        # Create new gdrive file with specified name.
-        new_file = drive.CreateFile({'title': name})
-        new_file.Upload()
-
-        file_obj = file_object.FileObject(new_file)
+    def add_file_entry(self, file_obj):
         file_id = file_obj.get_id()
-
-        # Create backing file with specified id.
-        # TODO design cache object which keeps track of the cached objects
+        self.currentNode[file_id] = file_obj.file
+        return self
 
     def navigate(self, path):
         # Reset current node.
@@ -176,6 +171,23 @@ class FileTreeState:
 
         # Wrap up all components.
         open_file_wrap = open_file_wrapper.OpenFileWrapper(current_element, os_fptr, cache_state)
+
+        return open_file_wrap
+
+    def create_file(self, path, flags, mode):
+        dir_name = os.path.dirname(path)
+        file_name = os.path.basename(path)
+        folder_el = self.navigate(dir_name).get_current_element()  # TODO error handling.
+
+        # Create new backing store object.
+        folder_id = folder_el.get_id()
+        new_file = file_object.FileObject(file_name=file_name, parent_id=folder_id)
+        fptr, cache_state = self.file_cache.create_file(new_file, mode, flags)
+
+        open_file_wrap = open_file_wrapper.OpenFileWrapper(new_file, fptr, cache_state)
+
+        # Add object to file tree. USING GoogleDriveFile.
+        self.add_file_entry(new_file)
 
         return open_file_wrap
 

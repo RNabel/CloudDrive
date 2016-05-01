@@ -34,6 +34,11 @@ class DecryptedDataStorage:
 
         return os_fptr, None
 
+    def create_file(self, file_obj, mode, flags):
+        cached_file_path = self.decrypted_folder_path + FILE_PATH_SEPARATOR + str(file_obj.get_id())
+        os_fptr = os.open(cached_file_path, flags, mode)
+
+        return os_fptr, None
     # Getters and setters
     # ===================
     def get_encrypted_folder(self):

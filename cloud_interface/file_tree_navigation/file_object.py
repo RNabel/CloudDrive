@@ -1,15 +1,31 @@
 import datetime
 from cloud_interface.file_tree_navigation import structure_fetcher as sf
+import cloud_interface
 
 
 class FileObject:
-    def __init__(self, gdriveFile):
+    def __init__(self, gdriveFile=None, file_name=None, parent_id=None):
         """
 
         Args:
             gdriveFile: pydrive.files.GoogleDriveFile
         """
-        self.file = gdriveFile
+        # Verify input parameters.
+        if gdriveFile or file_name and parent_id:
+            if gdriveFile:
+                self.file = gdriveFile
+            else:
+                # Create new GDrive object, and Upload it to fill the ID field.
+                new_file = cloud_interface.drive.CreateFile({
+                    "parents": [{"kind": "drive#fileLink",
+                                 "id": parent_id}],
+                    'title': file_name
+                })
+
+                new_file.Upload()
+                self.file = new_file
+        else:
+            raise Exception("FileObject called with incorrect parameters.")
 
     def get_name(self):
         return self.file['title']
