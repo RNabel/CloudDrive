@@ -43,6 +43,9 @@ class MetaDataWrapper:
 
         self.last_update = strict_rfc3339.now_to_rfc3339_utcoffset()
 
+    def get_update_time(self):
+        return self.last_update
+
     def _create_pickle_obj(self):
         return {
             'file_tree': self.file_tree,

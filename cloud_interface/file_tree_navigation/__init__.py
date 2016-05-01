@@ -1,9 +1,8 @@
 import threading
-
 import os
-import time
+import strict_rfc3339
 
-from structure_fetcher import metadata_storage_path, update_metadata
+from cloud_interface import drive
 import structure_fetcher as sf
 import pydrive.files
 
@@ -53,7 +52,7 @@ class FileTreeState:
             type: integer, 0 for all files, 1 for files, 2 for folders.
 
         Returns:
-            list
+            file_object.FileObject
         """
         if self.valid:
             output = []
@@ -233,6 +232,11 @@ class FileTreeState:
 
 class FileTreeUpdater(threading.Thread):
     def __init__(self, file_tree_navigator):
+        """
+
+        Args:
+            file_tree_navigator(FileTreeState): The current tree state.
+        """
         threading.Thread.__init__(self)
         self.stop = threading.Event()
         self.loop = threading.Event()
@@ -244,6 +248,26 @@ class FileTreeUpdater(threading.Thread):
 
     def run(self):
         while not self.stop.is_set():
+            last_update = self.file_tree_navigator.metadata_wrapper.last_update
+
+            self.file_tree_navigator.metadata_wrapper.set_update_time_to_now()
+            fcb_list = drive.ListFile(
+                {'q': 'modifiedDate >="{}" and trashed=false'.format(last_update)}
+            ).GetList()
+            self.process_changes(fcb_list, last_update)
+
+            print "There were {} changes.".format(len(fcb_list))
             self.loop.wait(constants.UPDATE_INTERVAL)
-            print "Updating metadata."
-            # TODO update request here.
+
+    def process_changes(self, fcb_list, last_update):
+        last_update = strict_rfc3339.rfc3339_to_timestamp(last_update)
+        for element in fcb_list:
+            element = file_object.FileObject(element)
+            # Handle new files
+            creation_time = element.get_ctime()
+            if creation_time > last_update:
+                # Handle new file.
+                print "New file found: {}".format(element.get_name())
+            else:
+                # Handle changed file.
+                print "Changed file found: {}".format(element.get_name())

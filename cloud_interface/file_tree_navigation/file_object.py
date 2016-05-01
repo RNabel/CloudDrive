@@ -1,4 +1,5 @@
 import datetime
+import strict_rfc3339
 from cloud_interface.file_tree_navigation import structure_fetcher as sf
 import cloud_interface
 
@@ -49,8 +50,7 @@ class FileObject:
         return self.file.metadata['mimeType']
 
     def _convert_date_to_unix(self, date_string):
-        dt = datetime.datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%fZ")
-        return (dt - datetime.datetime(1970, 1, 1)).total_seconds()
+        return strict_rfc3339.rfc3339_to_timestamp(date_string)
 
     def get_mtime(self):
         return self._convert_date_to_unix(self.file['modifiedDate'])
