@@ -133,7 +133,6 @@ class GDriveFuse(Operations):
         self._log(u"rmdir called with {}".format(str(path)))
         raise FuseOSError(errno.ENOSYS)
 
-
     def mkdir(self, path, mode):
         self._log(u"mkdir called with {} {}".format(str(path), str(mode)))
         raise FuseOSError(errno.ENOSYS)
@@ -147,9 +146,11 @@ class GDriveFuse(Operations):
         #                                                  'f_flag',
         #                                                  'f_frsize', 'f_namemax'))
 
+    # Deletes a file
     def unlink(self, path):
         self._log(u"unlink called with {}".format(str(path)))
-        raise FuseOSError(errno.ENOSYS)
+        self.file_tree_navigator.navigate(path).remove_current_element()
+        raise 0
 
     def symlink(self, name, target):
         self._log(u"symlink called with {} {}".format(str(name), str(target)))

@@ -149,6 +149,14 @@ class FileTreeState:
         self.currentNode[file_id] = file_obj.file
         return self
 
+    def remove_current_element(self):
+        curr_el = self.get_current_element()
+        curr_id = curr_el.get_id()
+        # Remove from tree structure
+        del self.file_tree['parent'][curr_id]
+
+        curr_el.remove()
+
     def navigate(self, path):
         # Reset current node.
         self.currentNode = self.rootNode
@@ -190,7 +198,7 @@ class FileTreeState:
     def create_file(self, path, flags, mode):
         dir_name = os.path.dirname(path)
         file_name = os.path.basename(path)
-        folder_el = self.navigate(dir_name).get_current_element()  # TODO error handling.
+        folder_el = self.navigate(dir_name).get_current_element()
 
         # Create new backing store object.
         folder_id = folder_el.get_id()
