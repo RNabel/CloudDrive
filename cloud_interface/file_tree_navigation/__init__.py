@@ -52,7 +52,7 @@ class FileTreeState:
             type: integer, 0 for all files, 1 for files, 2 for folders.
 
         Returns:
-            file_object.FileObject
+            file_object.FileObject | list
         """
         if self.valid:
             output = []
@@ -157,9 +157,16 @@ class FileTreeState:
     def remove_current_element(self):
         curr_el = self.get_current_element()
         curr_id = curr_el.get_id()
-        # Remove from tree structure
-        del self.file_tree['parent'][curr_id]
 
+        # Remove the part of the element from the file tree.
+        if curr_el.is_file():
+            # Remove from tree structure
+            del self.file_tree['parent'][curr_id]
+        else:  # If folder
+            del self.currentNode['parent'][curr_id]
+            del self.currentNode['parent'][curr_id + "_folder"]
+
+        # Remove the backed file.
         curr_el.remove()
 
     def navigate(self, path):
@@ -248,8 +255,9 @@ class FileTreeState:
         try:
             self.update_thread.set_stop_flag()
             self.update_thread.join()
-        finally:
+        except Exception as e:
             pass
+
         # Save metadata.
         print "Saving metadata."
         self.metadata_wrapper.save()

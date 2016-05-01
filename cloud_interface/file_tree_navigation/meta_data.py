@@ -22,7 +22,8 @@ class MetaDataWrapper:
             pickle_obj = self._create_pickle_obj()
             temp_path = self.metadata_storage_path + "_"
             pickle.dump(pickle_obj, open(temp_path, 'w+'))
-            os.remove(self.metadata_storage_path)
+            if os.path.exists(self.metadata_storage_path):
+                os.remove(self.metadata_storage_path)
             os.rename(temp_path, self.metadata_storage_path)
 
     def load(self):

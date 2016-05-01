@@ -61,10 +61,7 @@ class FileObject:
 
     def remove(self):
         file_id = self.get_id()
-        if self.is_file():
-            self.file.DeleteFile(file_id)
-        else:
-            pass
+        self.file.DeleteFile(file_id)
 
     def get_mimetype(self):
         return self.file.metadata['mimeType']

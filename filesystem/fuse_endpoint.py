@@ -131,7 +131,11 @@ class GDriveFuse(Operations):
 
     def rmdir(self, path):
         self._log(u"rmdir called with {}".format(str(path)))
-        raise FuseOSError(errno.ENOSYS)
+        self.file_tree_navigator.navigate(path)
+        count = len(self.file_tree_navigator.get_current_contents())
+
+        self.file_tree_navigator.remove_current_element()
+        return 0
 
     def mkdir(self, path, mode):
         self._log(u"mkdir called with {} {}".format(str(path), str(mode)))
