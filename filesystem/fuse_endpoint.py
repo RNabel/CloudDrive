@@ -10,6 +10,7 @@ import uuid
 from fuse import FUSE, FuseOSError, Operations
 
 import control
+import control.constants
 from cloud_interface import file_tree_navigation, downloader, uploader
 import decrypted_data_storage
 from cloud_interface.file_tree_navigation import AboutObject
@@ -282,5 +283,5 @@ class GDriveFuse(Operations):
 
 def main(mountpoint, temp_storage):
     gdriveFuse = GDriveFuse(temp_storage)
-    FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True)
+    FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True, fsname=control.constants.DRIVE_NAME)
     return gdriveFuse

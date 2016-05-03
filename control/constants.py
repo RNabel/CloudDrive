@@ -15,6 +15,8 @@ DECRYPTED_FOLDER_PATH = os.path.expanduser("~/Temp/Decrypted")
 
 VALIDATED_CREDENTIAL_FILE = "/validated_credentials.txt"
 
+DRIVE_NAME = "GDriveFileSystem"
+
 UPDATE_INTERVAL = 30  # Number of seconds for file tree sync with remote.
 
 block_size = 524288
