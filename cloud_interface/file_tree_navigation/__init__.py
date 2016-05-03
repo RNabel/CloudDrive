@@ -321,4 +321,4 @@ class FileTreeUpdater(threading.Thread):
             else:
                 # Handle changed file.
                 print "Changed file found: {}".format(element.get_name())
-                self.file_tree_navigator.update_file_entry_id(ek)
+                self.file_tree_navigator.update_file_entry_id(element)

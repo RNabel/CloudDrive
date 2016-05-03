@@ -21,7 +21,9 @@ class GDriveFuse(Operations):
     """
 
     def __init__(self, temp_storage_path):
+        self._log("Loading fuse.")
         self.file_tree_navigator = file_tree_navigation.FileTreeState()
+        self._log("File tree loaded.")
         self.open_file_table = {}
         self.open_file_table_flags = {}
 
@@ -167,7 +169,7 @@ class GDriveFuse(Operations):
     def unlink(self, path):
         self._log(u"unlink called with {}".format(str(path)))
         self.file_tree_navigator.navigate(path).remove_current_element()
-        raise 0
+        return 0
 
     def symlink(self, name, target):
         self._log(u"symlink called with {} {}".format(str(name), str(target)))
