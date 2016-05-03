@@ -64,7 +64,7 @@ def create_folder(folder_name, parent_id):
 
 def _delete_file(file_id):
     file_obj = drive.CreateFile({'id': file_id})
-    file_obj.DeleteFile(file_id)
+    file_obj.Delete()
 
 
 def _download_file(file_id):

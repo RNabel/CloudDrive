@@ -5,19 +5,6 @@ from control import tools
 
 
 class FileObject:
-    def make_thread_safe(original_function):
-        def decorator(self, *args, **kwargs):
-            # Used to make operations thread-safe.
-            if not self.thread_safe:
-                (self.gauth, self.drive) = tools.copy_drive(cloud_interface.gauth)
-                self.file = self.drive.CreateFile(self.file)
-                self.file.FetchMetadata()
-                self.thread_safe = True
-
-            original_function(self, *args, **kwargs)
-
-        return decorator
-
     def __init__(self, gdriveFile=None, file_name=None, parent_id=None, is_folder=False):
         """
 
@@ -61,7 +48,6 @@ class FileObject:
     def get_name(self):
         return self.file['title']
 
-    @make_thread_safe
     def rename(self, new_name):
         """
         Only changes the name of the GoogleDriveFile, does not change location.
@@ -86,10 +72,8 @@ class FileObject:
         else:
             return int(self.file['quotaBytesUsed'])
 
-    @make_thread_safe
     def remove(self):
-        file_id = self.get_id()
-        self.file.DeleteFile(file_id)
+        self.file.Delete()
 
     def get_mimetype(self):
         return self.file.metadata['mimeType']
@@ -103,13 +87,11 @@ class FileObject:
     def get_ctime(self):
         return self._convert_date_to_unix(self.file['createdDate'])
 
-    @make_thread_safe
     def download_to(self, path):
         fh = open(path, 'w+')
         fh.close()
         self.file.GetContentFile(path)
 
-    @make_thread_safe
     def upload_content(self, path):
         if self.is_file():
             self.file.SetContentFile(path)

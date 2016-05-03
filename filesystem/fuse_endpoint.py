@@ -47,7 +47,7 @@ class GDriveFuse(Operations):
             return self.open_file_table[fh_id]
 
         else:
-            return self.file_tree_navigator.open_file(path, 0)
+            return self.file_tree_navigator.open_file(path, os.O_RDWR)
             # return self.downloader.download_file(path, self.file_tree_navigator, fh_id, 0)
 
     def _create_file_handle(self):
@@ -127,7 +127,6 @@ class GDriveFuse(Operations):
         self._log(u"readlink called with {}".format(path))
         raise FuseOSError(errno.ENOSYS)
 
-    # Creates a special or ordinary file - used by touch and similar.
     def mknod(self, path, mode, dev):
         self._log(u"mknod called with {}".format(str(path), str(mode), str(dev)))
         raise FuseOSError(errno.ENOSYS)
@@ -247,6 +246,7 @@ class GDriveFuse(Operations):
         except Exception as e:
             fptr = self._open_file(path, fh).get_file_handle()
         os.ftruncate(fptr, length)
+        return 0
         # fptr.truncate(length) has to be python file object.
 
     def flush(self, path, fh):
@@ -268,7 +268,7 @@ class GDriveFuse(Operations):
 
     def fsync(self, path, fdatasync, fh):
         self._log(u"fsync called with {} {} {}".format(path, fdatasync, fh))
-        fptr = self.open_file_table[fh]
+        fptr = self.open_file_table[fh].get_file_handle()
         return self.flush(path, fptr)
 
     # Tear-down method.
@@ -282,9 +282,3 @@ def main(mountpoint, temp_storage):
     gdriveFuse = GDriveFuse(temp_storage)
     FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True)
     return gdriveFuse
-
-
-if __name__ == '__main__':
-    mountpoint = '/cs/scratch/rn30/mnt'
-    root = '/cs/home/rn30/Downloads'
-    main(mountpoint)

@@ -13,6 +13,8 @@ DECRYPTED_TITLE = "decrypted_title"
 ENCRYPTED_FOLDER_PATH = os.path.expanduser("~/Temp/Encrypted")
 DECRYPTED_FOLDER_PATH = os.path.expanduser("~/Temp/Decrypted")
 
+VALIDATED_CREDENTIAL_FILE = "/validated_credentials.txt"
+
 UPDATE_INTERVAL = 30  # Number of seconds for file tree sync with remote.
 
 block_size = 524288

@@ -43,9 +43,13 @@ signal.signal(signal.SIGALRM, tear_down)
 
 if __name__ == "__main__":
     useCLI = False
-
-    mount_point = '/home/robin/CloudDrive'
-    temp_storage = '/home/robin/Temp'
+    isCS = True
+    if isCS:
+        mount_point = '/cs/scratch/rn30/mnt'
+        temp_storage = '/cs/scratch/rn30/Temp'
+    else:
+        mount_point = '/home/robin/CloudDrive'
+        temp_storage = '/home/robin/Temp'
 
     # This function will not return until the process receives a SIGINT or SIGKILL interrupt.
     initialise_fuse(mount_point, temp_storage)

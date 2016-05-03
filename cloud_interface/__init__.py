@@ -7,7 +7,7 @@ assert control.constants.PROJECT_FOLDER
 
 gauth = GoogleAuth(settings_file=control.constants.PROJECT_FOLDER + '/cloud_interface/settings.yaml')
 # Try to load saved client credentials
-CREDENTIALS = control.constants.PROJECT_FOLDER + "/mycreds.txt"
+CREDENTIALS = control.constants.PROJECT_FOLDER + control.constants.VALIDATED_CREDENTIAL_FILE
 gauth.LoadCredentialsFile(CREDENTIALS)
 
 if gauth.credentials is None:

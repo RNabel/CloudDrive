@@ -155,6 +155,14 @@ class FileTreeState:
             self.currentNode[file_id] = file_obj.file
         return self
 
+    def add_file_entry_id(self, file_obj):
+        print "Adding file based on id."
+        return self
+
+    def update_file_entry_id(self, file_obj):
+        print "Updating file entry based on id."
+        return self
+
     def remove_current_element(self):
         curr_el = self.get_current_element()
         curr_id = curr_el.get_id()
@@ -309,6 +317,8 @@ class FileTreeUpdater(threading.Thread):
             if creation_time > last_update:
                 # Handle new file.
                 print "New file found: {}".format(element.get_name())
+                self.file_tree_navigator.add_file_entry_id(element)
             else:
                 # Handle changed file.
                 print "Changed file found: {}".format(element.get_name())
+                self.file_tree_navigator.update_file_entry_id(ek)

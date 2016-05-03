@@ -4,6 +4,7 @@ import strict_rfc3339
 
 import control
 from cloud_interface import drive
+from cloud_interface.file_tree_navigation import file_object
 
 
 class MetaDataWrapper:
@@ -11,6 +12,7 @@ class MetaDataWrapper:
         self.file_tree = file_tree
         self.last_update = None
         self.fcb_list = None
+        self.file_dict = dict()
         self.metadata_storage_path = control.constants.PROJECT_FOLDER + '/meta_data.txt'
 
         self.first_load = True  # Indicates whether first batch of data had to be downloaded.
@@ -36,6 +38,11 @@ class MetaDataWrapper:
         else:
             self.set_update_time_to_now()
             self.fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
+
+            for fcb in self.fcb_list:
+                fcb_ = file_object.FileObject(fcb)
+                self.file_dict[fcb_.get_id()] = fcb_
+
             return self.fcb_list
 
     def update(self):
@@ -53,12 +60,14 @@ class MetaDataWrapper:
     def _create_pickle_obj(self):
         return {
             'file_tree': self.file_tree,
-            'last_update': self.last_update
+            'last_update': self.last_update,
+            'file_dict': self.file_dict
         }
 
     def _convert_pickle_obj(self, loaded_obj):
         if 'file_tree' in loaded_obj and 'last_update' in loaded_obj:
             self.file_tree = loaded_obj['file_tree']
+            self.file_dict = loaded_obj['file_dict']
             self.last_update = loaded_obj['last_update']
         else:
             raise Exception("MetaDataWrapper loaded incorrectly formatted file.")
