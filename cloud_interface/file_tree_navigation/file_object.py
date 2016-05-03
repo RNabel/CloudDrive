@@ -1,10 +1,23 @@
-import datetime
 import strict_rfc3339
-from cloud_interface.file_tree_navigation import structure_fetcher as sf
+
 import cloud_interface
+from control import tools
 
 
 class FileObject:
+    def make_thread_safe(original_function):
+        def decorator(self, *args, **kwargs):
+            # Used to make operations thread-safe.
+            if not self.thread_safe:
+                (self.gauth, self.drive) = tools.copy_drive(cloud_interface.gauth)
+                self.file = self.drive.CreateFile(self.file)
+                self.file.FetchMetadata()
+                self.thread_safe = True
+
+            original_function(self, *args, **kwargs)
+
+        return decorator
+
     def __init__(self, gdriveFile=None, file_name=None, parent_id=None, is_folder=False):
         """
 
@@ -41,8 +54,22 @@ class FileObject:
         else:
             raise Exception("FileObject called with incorrect parameters.")
 
+        self.gauth = None
+        self.drive = None
+        self.thread_safe = False
+
     def get_name(self):
         return self.file['title']
+
+    @make_thread_safe
+    def rename(self, new_name):
+        """
+        Only changes the name of the GoogleDriveFile, does not change location.
+        Returns:
+            None
+        """
+        self.file['title'] = new_name
+        self.file.Upload()
 
     def is_folder(self):
         return self.file.metadata['mimeType'] == 'application/vnd.google-apps.folder'
@@ -59,6 +86,7 @@ class FileObject:
         else:
             return int(self.file['quotaBytesUsed'])
 
+    @make_thread_safe
     def remove(self):
         file_id = self.get_id()
         self.file.DeleteFile(file_id)
@@ -75,17 +103,14 @@ class FileObject:
     def get_ctime(self):
         return self._convert_date_to_unix(self.file['createdDate'])
 
+    @make_thread_safe
     def download_to(self, path):
         fh = open(path, 'w+')
         fh.close()
-        sf.drive.CreateFile({'id': self.get_id()}).GetContentFile(path)
+        self.file.GetContentFile(path)
 
+    @make_thread_safe
     def upload_content(self, path):
         if self.is_file():
-            drive_file = sf.drive.CreateFile({
-                'id': self.get_id(),
-                'mimeType': self.get_mimetype()
-            })
-            drive_file.SetContentFile(path)
-
-            drive_file.Upload()
+            self.file.SetContentFile(path)
+            self.file.Upload()

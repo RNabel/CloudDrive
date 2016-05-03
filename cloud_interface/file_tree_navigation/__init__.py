@@ -160,15 +160,21 @@ class FileTreeState:
         curr_id = curr_el.get_id()
 
         # Remove the part of the element from the file tree.
-        if curr_el.is_file():
+        if curr_el.is_file() and curr_id in self.file_tree['parent']:
             # Remove from tree structure
             del self.file_tree['parent'][curr_id]
-        else:  # If folder
+        elif curr_el.is_folder():  # If folder
             del self.currentNode['parent'][curr_id]
             del self.currentNode['parent'][curr_id + "_folder"]
+        else:
+            print Exception("remove_current_element failed as element not present")
 
         # Remove the backed file.
         curr_el.remove()
+
+    def set_utime(self, times):
+        curr_el = self.get_current_element()
+        pass
 
     def navigate(self, path):
         # Reset current node.

@@ -15,4 +15,6 @@ DECRYPTED_FOLDER_PATH = os.path.expanduser("~/Temp/Decrypted")
 
 UPDATE_INTERVAL = 30  # Number of seconds for file tree sync with remote.
 
+block_size = 524288
+
 assert ENCRYPTED_FLAG != DECRYPTED_TITLE

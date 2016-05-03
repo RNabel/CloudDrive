@@ -9,6 +9,7 @@ import uuid
 
 from fuse import FUSE, FuseOSError, Operations
 
+import control
 from cloud_interface import file_tree_navigation, downloader, uploader
 import decrypted_data_storage
 from cloud_interface.file_tree_navigation import AboutObject
@@ -83,7 +84,7 @@ class GDriveFuse(Operations):
             # Reference document [here](https://docs.python.org/2/library/stat.html)
             # Set size.
             st_fixed['st_size'] = file_obj.get_size()
-            st_fixed['st_blocks'] = st_fixed['st_size'] // 512 + 1
+            st_fixed['st_blocks'] = st_fixed['st_size'] // control.constants.block_size + 1
             # Set access rights
             is_folder = file_obj.is_folder()
             if is_folder:
@@ -146,7 +147,7 @@ class GDriveFuse(Operations):
 
     def statfs(self, path):
         self._log(u"statfs called with {}".format(str(path)))
-        block_size = 512
+        block_size = control.constants.block_size
         total_blocks = self.about.get_total_bytes() // block_size + 1
         used_blocks = self.about.get_used_bytes() // block_size + 1
         free_blocks = total_blocks - used_blocks
@@ -175,7 +176,13 @@ class GDriveFuse(Operations):
 
     def rename(self, old, new):
         self._log(u"rename called with {} {}".format(str(old), str(new)))
-        raise FuseOSError(errno.ENOSYS)
+        dir_old = os.path.dirname(old)
+        dir_new = os.path.dirname(new)
+        if dir_new == dir_old:
+            curr_el = self.file_tree_navigator.navigate(old).get_current_element()
+            curr_el.rename(os.path.basename(new))
+        else:
+            raise FuseOSError(errno.ENOSYS)
 
     def link(self, target, name):
         self._log(u"link called with {} {}".format(str(target), str(name)))
@@ -184,6 +191,7 @@ class GDriveFuse(Operations):
     def utimens(self, path, times=None):
         self._log(u"utimens called with {} {}".format(str(path), str(times)))
         # TODO implement.
+        self.file_tree_navigator.navigate(path).set_utime(times)
         return 0
 
     # File methods
@@ -220,7 +228,7 @@ class GDriveFuse(Operations):
         return os.read(fptr, length)
 
     def write(self, path, buf, offset, fh):
-        self._log(u"write called with {} {} {} {}".format(path, buf, offset, fh))
+        self._log(u"write called with {} {} {}".format(str(path), str(offset), str(fh)))
         try:
             fptr = self.open_file_table[fh].get_file_handle()
         except Exception as e:
@@ -237,7 +245,7 @@ class GDriveFuse(Operations):
         try:
             fptr = self.open_file_table[fh].get_file_handle()
         except Exception as e:
-            fptr = self._open_file(path, fh)
+            fptr = self._open_file(path, fh).get_file_handle()
         os.ftruncate(fptr, length)
         # fptr.truncate(length) has to be python file object.
 
