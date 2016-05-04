@@ -70,7 +70,7 @@ class FileObject:
         if self.is_folder():
             return 10  # TODO return number of entries
         else:
-            return int(self.file['quotaBytesUsed'])
+            return int(self.file['fileSize'])
 
     def remove(self):
         self.file.Delete()
