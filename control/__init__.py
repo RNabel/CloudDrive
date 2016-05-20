@@ -5,10 +5,7 @@ import sys
 
 import control.constants
 import filesystem.fuse_endpoint
-
-# Folders used to store local files.
-ENC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_enc_folder"
-DEC_FOLDER = "/home/robin/PycharmProjects/CloudDrive/temp_dec_folder"
+import secrets
 
 fuse_object = None
 
@@ -42,14 +39,9 @@ signal.signal(signal.SIGQUIT, tear_down)
 signal.signal(signal.SIGALRM, tear_down)
 
 if __name__ == "__main__":
-    useCLI = False
-    isCS = True
-    if isCS:
-        mount_point = '/cs/scratch/rn30/mnt'
-        temp_storage = '/cs/scratch/rn30/Temp'
-    else:
-        mount_point = '/home/robin/CloudDrive'
-        temp_storage = '/home/robin/Temp'
+    # Set the mount point and temporary storage location. TODO move into a settings context.
+    mount_point = secrets.MOUNT_POINT
+    temp_storage = secrets.TEMP_STORAGE
 
     # This function will not return until the process receives a SIGINT or SIGKILL interrupt.
     initialise_fuse(mount_point, temp_storage)

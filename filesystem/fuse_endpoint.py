@@ -26,6 +26,7 @@ class GDriveFuse(Operations):
         self.file_tree_navigator = file_tree_navigation.FileTreeState()
         self._log("File tree loaded.")
         self.open_file_table = {}
+        self.open_file_table_dirty_flags = {}
         self.open_file_table_flags = {}
 
         self.downloader = downloader.Downloader()
@@ -239,7 +240,8 @@ class GDriveFuse(Operations):
 
         os.lseek(fptr, offset, os.SEEK_SET)
         ret_value = os.write(fptr, buf)
-        self.uploader.upload_file(path, self.file_tree_navigator, fh)
+
+        self.open_file_table_dirty_flags[fh] = True
         return ret_value
 
     def truncate(self, path, length, fh=None):
@@ -260,12 +262,19 @@ class GDriveFuse(Operations):
 
     def release(self, path, fh):
         self._log(u"release called with {} {}".format(path, fh))
-        # Delete entry in open file table.
         try:
             fptr = self.open_file_table[fh].get_file_handle()
+
+            if self.open_file_table_dirty_flags[fh]:
+                file_obj = self.open_file_table[fh].get_file_object() # Get the file object.
+                self.uploader.upload_file(file_obj)  # Upload the file.
+                del self.open_file_table_dirty_flags[fh]  # Remove the flag.
+
+            # Delete entry in open file table.
             del self.open_file_table_flags[fh]
             del self.open_file_table[fh]
             return os.close(fptr)
+
         except Exception as e:
             return 0
 
