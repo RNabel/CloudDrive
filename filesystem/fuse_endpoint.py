@@ -22,6 +22,7 @@ class GDriveFuse(Operations):
     """
 
     def __init__(self, temp_storage_path):
+        self.logger = control.tools.setup_logger("FuseOperations")
         self._log("Loading fuse.")
         self.file_tree_navigator = file_tree_navigation.FileTreeState()
         self._log("File tree loaded.")
@@ -38,9 +39,8 @@ class GDriveFuse(Operations):
 
     # Helpers
     # =======
-
     def _log(self, text):
-        print(text)
+        self.logger.info(text)
 
     def _open_file(self, path, fh_id=None):
         # Check if file is present in cache and download as necessary.

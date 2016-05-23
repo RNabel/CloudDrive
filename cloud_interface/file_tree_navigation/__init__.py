@@ -2,6 +2,7 @@ import threading
 import os
 import strict_rfc3339
 
+import control
 from cloud_interface import drive
 import structure_fetcher as sf
 import pydrive.files
@@ -19,6 +20,7 @@ import secrets
 
 class FileTreeState:
     def __init__(self, current_path=FILE_PATH_SEPARATOR):
+        self.logger = control.tools.setup_logger("FileTreeLogger")
         self.file_tree = sf.tree()
         self.currentNode = self.file_tree
         self.currentNodeID = "root"
@@ -211,6 +213,7 @@ class FileTreeState:
         Returns:
             OpenFileWrapper
         """
+        self.logger.info("open_file path:%s with flags:%s" % (path, flags))
         # Resolve the path.
         current_element = self.navigate(path).get_current_element()
 
@@ -223,6 +226,7 @@ class FileTreeState:
         return open_file_wrap
 
     def create_file(self, path, flags, mode):
+        self.logger.info("create_file path:%s with flags:%d, mode:%d" % (path, flags, mode))
         dir_name = os.path.dirname(path)
         file_name = os.path.basename(path)
         folder_el = self.navigate(dir_name).get_current_element()
@@ -240,6 +244,7 @@ class FileTreeState:
         return open_file_wrap
 
     def create_folder(self, path, mode):
+        self.logger.info("create_folder path:%s with flags:%d" % (path, mode))
         dir_name = os.path.dirname(path)
         folder_name = os.path.basename(path)
         par_folder_el = self.navigate(dir_name).get_current_element()
@@ -266,6 +271,7 @@ class FileTreeState:
                     file_object["encrypted"] = False
 
     def tear_down(self):
+        self.logger.info("tear_down ---------------------------------------------------")
         # End worker threads.
         try:
             self.update_thread.set_stop_flag()
@@ -274,8 +280,9 @@ class FileTreeState:
             pass
 
         # Save metadata.
-        print "Saving metadata."
+        self.logger.info("Saving metadata...")
         self.metadata_wrapper.save()
+        self.logger.info("Tear-down finished.")
         return 0
 
 
@@ -287,6 +294,7 @@ class FileTreeUpdater(threading.Thread):
             file_tree_navigator(FileTreeState): The current tree state.
         """
         threading.Thread.__init__(self)
+        self.logger = control.tools.setup_logger("FileTreeUpdaterLogger")
         self.stop = threading.Event()
         self.loop = threading.Event()
         self.file_tree_navigator = file_tree_navigator
@@ -294,31 +302,36 @@ class FileTreeUpdater(threading.Thread):
     def set_stop_flag(self):
         self.stop.set()
         self.loop.set()
+        self.logger.info("id:%s Stop flag set." % self.ident)
 
     def run(self):
         while not self.stop.is_set():
             last_update = self.file_tree_navigator.metadata_wrapper.last_update
 
+            self.logger.info("id:%s Fetching metadata." % self.ident)
             self.file_tree_navigator.metadata_wrapper.set_update_time_to_now()
             fcb_list = drive.ListFile(
                 {'q': 'modifiedDate >="{}" and trashed=false'.format(last_update)}
             ).GetList()
             self.process_changes(fcb_list, last_update)
 
-            print "There were {} changes.".format(len(fcb_list))
+            self.logger.info("id:%d There were %d changes." % (self.ident, len(fcb_list)))
             self.loop.wait(constants.UPDATE_INTERVAL)
 
     def process_changes(self, fcb_list, last_update):
+        self.logger.info("id:%d Processing changes..." % self.ident)
         last_update = strict_rfc3339.rfc3339_to_timestamp(last_update)
+
         for element in fcb_list:
             element = file_object.FileObject(element)
-            # Handle new files
+
+            # Handle new files TODO Handle new files added to the 
             creation_time = element.get_ctime()
             if creation_time > last_update:
                 # Handle new file.
-                print "New file found: {}".format(element.get_name())
+                self.logger.info("New file found: %s" % element.get_name())
                 self.file_tree_navigator.add_file_entry_id(element)
             else:
                 # Handle changed file.
-                print "Changed file found: {}".format(element.get_name())
+                self.logger.info("Changed file found: %s" % element.get_name())
                 self.file_tree_navigator.update_file_entry_id(element)

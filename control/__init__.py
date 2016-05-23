@@ -1,14 +1,15 @@
 import os
 import signal
-
+import logging
 import sys
 
 import control.constants
 import filesystem.fuse_endpoint
 import secrets
+from control import tools
 
 fuse_object = None
-
+logger = None
 
 def initialise_fuse(mount_point, temp_storage):
     global fuse_object
@@ -21,11 +22,11 @@ def initialise_fuse(mount_point, temp_storage):
 
 # Tear down method.
 def tear_down(signal=None, frame=None):
-    print "Got SIGTERM/SIGINT"
+    logger.info("Got SIGTERM/SIGINT")
     # Forward instruction to tear down.
     exit_code = fuse_object.tear_down()
 
-    print "Tear-down done, exiting."
+    logger.info("Tear-down done, exiting.")
     # Provide exit code
     sys.exit(exit_code)
 
@@ -39,6 +40,8 @@ signal.signal(signal.SIGQUIT, tear_down)
 signal.signal(signal.SIGALRM, tear_down)
 
 if __name__ == "__main__":
+    logger = tools.setup_logger("ControlLogger")
+
     # Set the mount point and temporary storage location. TODO move into a settings context.
     mount_point = secrets.MOUNT_POINT
     temp_storage = secrets.TEMP_STORAGE

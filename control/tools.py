@@ -1,7 +1,12 @@
+import logging
+
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
 # Adapted from http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+import control
+
+
 def getRed(prt): return u"\033[91m{}\033[00m".format(prt)
 def prRed(prt): print(getRed(prt))
 
@@ -65,3 +70,22 @@ def copy_drive(gauth):
     gauth.Authorize()
     drive = GoogleDrive(gauth)
     return (gauth, drive)
+
+def setup_logger(name, log_level=logging.DEBUG, use_cl_logger=True):
+    # Set up FUSE logging.
+    logger = logging.getLogger(name)
+    logger.setLevel(log_level)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    if use_cl_logger:  # use command line logger.
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+    fh = logging.FileHandler(control.constants.LOGS_FOLDER + name + '.log')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+
+    logger.addHandler(fh)
+    return logger
