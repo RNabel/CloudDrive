@@ -89,7 +89,7 @@ class GDriveFuse(Operations):
             # Reference document [here](https://docs.python.org/2/library/stat.html)
             # Set size.
             st_fixed['st_size'] = file_obj.get_size()
-            st_fixed['st_blocks'] = st_fixed['st_size'] // control.constants.block_size + 1
+            st_fixed['st_blocks'] = st_fixed['st_size'] // control.constants.BLOCK_SIZE + 1
             # Set access rights
             is_folder = file_obj.is_folder()
             if is_folder:
@@ -151,7 +151,7 @@ class GDriveFuse(Operations):
 
     def statfs(self, path):
         self._log(u"statfs called with {}".format(str(path)))
-        block_size = control.constants.block_size
+        block_size = control.constants.BLOCK_SIZE
         total_blocks = self.about.get_total_bytes() // block_size + 1
         used_blocks = self.about.get_used_bytes() // block_size + 1
         free_blocks = total_blocks - used_blocks
