@@ -54,7 +54,8 @@ class GDriveFuse(Operations):
             return self.file_tree_navigator.open_file(path, os.O_RDWR)
             # return self.downloader.download_file(path, self.file_tree_navigator, fh_id, 0)
 
-    def _create_file_handle(self):
+    @staticmethod
+    def _create_file_handle():
         fh = uuid.uuid4().int
         fh >>= 96  # Convert 128-bit UUID into 32-bit int.
         return fh
@@ -139,13 +140,13 @@ class GDriveFuse(Operations):
         self._log(u"rmdir called with {}".format(str(path)))
         self.file_tree_navigator.navigate(path)
         count = len(self.file_tree_navigator.get_current_contents())
-
+        # TODO handle if directory is not empty.
         self.file_tree_navigator.remove_current_element()
         return 0
 
     def mkdir(self, path, mode):
         self._log(u"mkdir called with {} {}".format(str(path), str(mode)))
-        open_file_wrap = self.file_tree_navigator.create_folder(path, mode)
+        self.file_tree_navigator.create_folder(path, mode)
         return 0
 
     def statfs(self, path):
@@ -266,7 +267,7 @@ class GDriveFuse(Operations):
             fptr = self.open_file_table[fh].get_file_handle()
 
             if self.open_file_table_dirty_flags[fh]:
-                file_obj = self.open_file_table[fh].get_file_object() # Get the file object.
+                file_obj = self.open_file_table[fh].get_file_object()  # Get the file object.
                 self.uploader.upload_file(file_obj)  # Upload the file.
                 del self.open_file_table_dirty_flags[fh]  # Remove the flag.
 
@@ -291,6 +292,6 @@ class GDriveFuse(Operations):
 
 
 def main(mountpoint, temp_storage):
-    gdriveFuse = GDriveFuse(temp_storage)
-    FUSE(gdriveFuse, mountpoint, nothreads=True, foreground=True, fsname=control.constants.DRIVE_NAME)
-    return gdriveFuse
+    gdrive_fuse = GDriveFuse(temp_storage)
+    FUSE(gdrive_fuse, mountpoint, nothreads=True, foreground=True, fsname=control.constants.DRIVE_NAME)
+    return gdrive_fuse

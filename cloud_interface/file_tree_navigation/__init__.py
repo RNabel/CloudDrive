@@ -48,12 +48,12 @@ class FileTreeState:
         self.update_thread = FileTreeUpdater(self)
         # self.update_thread.start()
 
-    def get_current_contents(self, type=0, name=None):
+    def get_current_contents(self, content_type=0, name=None):
         """
         Returns the file objects contained in the current folder.
         Args:
-            type: integer, 0 for all files, 1 for files, 2 for folders.
-
+            content_type: integer, 0 for all files, 1 for files, 2 for folders.
+            name: The name of the file object.
         Returns:
             file_object.FileObject | list
         """
@@ -61,7 +61,7 @@ class FileTreeState:
             output = []
             for key in [x for x in self.currentNode.keys() if x not in ['parent', 'self']]:
                 current_el = self.currentNode[key]
-                # Ignore object if incorrect instance type.
+                # Ignore object if incorrect instance content_type.
                 if not isinstance(current_el, pydrive.files.GoogleDriveFile):
                     continue
 
@@ -70,9 +70,9 @@ class FileTreeState:
                 is_folder = sf.is_folder(current_el)
 
                 if is_file or is_folder:
-                    if type == 0 or \
-                                            type == 1 and is_file or \
-                                            type == 2 and is_folder:
+                    if content_type == 0 or \
+                                            content_type == 1 and is_file or \
+                                            content_type == 2 and is_folder:
                         output.append(current_el)
                 else:
                     continue
@@ -96,8 +96,8 @@ class FileTreeState:
         else:
             return False
 
-    def get_names(self, type=0):
-        contents = self.get_current_contents(type)
+    def get_names(self, file_type=0):
+        contents = self.get_current_contents(file_type)
         return [y[DECRYPTED_TITLE] if DECRYPTED_TITLE in y else y['title'] for y in contents]
 
     def change_path(self, new_folder):
@@ -184,7 +184,6 @@ class FileTreeState:
 
     def set_utime(self, times):
         curr_el = self.get_current_element()
-        pass
 
     def navigate(self, path):
         # Reset current node.
@@ -258,17 +257,17 @@ class FileTreeState:
         pass
 
     def _decrypt_file_names_in_current_folder(self):
-        for file_id, file_object in self.currentNode.iteritems():
-            title = file_object["title"]
+        for file_id, file_obj in self.currentNode.iteritems():
+            title = file_obj["title"]
 
-            if ENCRYPTED_FLAG not in file_object:
+            if ENCRYPTED_FLAG not in file_obj:
                 try:
                     decrypted_title = self.encryptor.decrypt(title, string=True)
-                    file_object[ENCRYPTED_FLAG] = True
-                    file_object[DECRYPTED_TITLE] = decrypted_title
+                    file_obj[ENCRYPTED_FLAG] = True
+                    file_obj[DECRYPTED_TITLE] = decrypted_title
 
                 except Exception as e:
-                    file_object["encrypted"] = False
+                    file_obj["encrypted"] = False
 
     def tear_down(self):
         self.logger.info("tear_down ---------------------------------------------------")

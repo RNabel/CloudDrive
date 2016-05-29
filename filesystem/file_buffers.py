@@ -87,7 +87,8 @@ class EncryptedFileBuffer(FileBuffer):
         # open(file_path, 'wa').close()
         gdrive_file.GetContentFile(file_path)
 
-    def upload_file(self, gdrive_file):
+    @staticmethod
+    def upload_file(gdrive_file):
         """
         Upload the specified gdrive_file
         Args:

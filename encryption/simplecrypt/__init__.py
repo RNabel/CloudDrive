@@ -4,8 +4,6 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Random.random import getrandbits
 from Crypto.Util import Counter
 
-import datetime  # timing experiment.
-
 # see: http://www.daemonology.net/blog/2009-06-11-cryptographic-right-answers.html
 
 EXPANSION_COUNT = (10000, 10000, 100000)
@@ -126,7 +124,8 @@ def _assert_not_unicode(data):
     u_type = type(b''.decode('utf8'))
     if isinstance(data, u_type):
         raise DecryptionException('Data to decrypt must be bytes; ' +
-                                  'you cannot use a string because no string encoding will accept all possible characters.')
+                                  'you cannot use a string because '
+                                  'no string encoding will accept all possible characters.')
 
 
 def _assert_encrypt_length(data):

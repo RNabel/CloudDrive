@@ -1,5 +1,4 @@
 import os
-import sys
 
 """
 File Splitter; code taken from: [StackOverflow Answer](http://stackoverflow.com/a/33151466/3918512)

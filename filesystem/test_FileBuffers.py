@@ -1,13 +1,13 @@
 import unittest
 import os
-from filesystem import FileBuffers
+from filesystem import file_buffers
 import cloud_interface
 import control.constants
 
 
 class TestFileBuffer(unittest.TestCase):
     def test_get_file_path_not_in_storage(self):
-        temp_buffer = FileBuffers.FileBuffer('abcdef')
+        temp_buffer = file_buffers.FileBuffer('abcdef')
         self.assertFalse(temp_buffer.get_file_path('abc'))
 
     def test_get_file_path_in_storage(self):
@@ -47,13 +47,13 @@ class TestFileBuffer(unittest.TestCase):
 
     def test_id_to_name(self):
         file_id = "abcd-abd"
-        temp_buffer = FileBuffers.FileBuffer('abcdef')
+        temp_buffer = file_buffers.FileBuffer('abcdef')
         file_name = temp_buffer.id_to_file_name(file_id)
         self.assertEqual(temp_buffer.file_name_to_id(file_name), file_id)
 
 class TestEncryptedBuffer(unittest.TestCase):
     def test_initial(self):
-        temp_buffer = FileBuffers.EncryptedFileBuffer()
+        temp_buffer = file_buffers.EncryptedFileBuffer()
         self.assertFalse(len(temp_buffer.files))
         self.assertTrue(temp_buffer.path == control.constants.ENCRYPTED_FOLDER_PATH)
 
@@ -61,7 +61,7 @@ class TestEncryptedBuffer(unittest.TestCase):
         file_id = '0B-schRXnDFZebGFCcjYwRkxNN00'
         file_name = 'test_file.txt'
         gdrive_file = cloud_interface.drive.CreateFile({'id': file_id, 'title': file_name})
-        temp_buffer = FileBuffers.EncryptedFileBuffer()
+        temp_buffer = file_buffers.EncryptedFileBuffer()
 
         # Ensure FileBuffer is empty.
         self.assertFalse(os.path.exists(file_name))

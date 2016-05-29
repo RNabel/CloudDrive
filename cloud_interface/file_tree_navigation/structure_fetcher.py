@@ -178,30 +178,30 @@ def filter_file_list(files, want_folders):
         return [f for f in files if f.metadata['mimeType'] != u'application/vnd.google-apps.folder']
 
 
-def get_titles(file_list):
-    # Deal with possibly encrypted file names.
-    file_names = [f['title'] for f in file_list]
+# def get_titles(file_list):
+#     # Deal with possibly encrypted file names.
+#     file_names = [f['title'] for f in file_list]
+#
+#     # Loop through all names, url-unquote and try to decrypt. If decrypted with simplecrypt, decryption successful,
+#     #   otherwise Exception raised.
+#     out_names = []
+#     for file_name in file_names:
+#         try:
+#             file_name = encryption.decrypt_file_name(file_name)
+#         except:
+#             pass
+#
+#         out_names.append(file_name)
+#
+#     return out_names
 
-    # Loop through all names, url-unquote and try to decrypt. If decrypted with simplecrypt, decryption successful,
-    #   otherwise Exception raised.
-    out_names = []
-    for file_name in file_names:
-        try:
-            file_name = encryption.decrypt_file_name(file_name)
-        except:
-            pass
 
-        out_names.append(file_name)
-
-    return out_names
-
-
-def _get_file_from_list(file_list, title):
-    for element in file_list:
-        if element['title'] == title:
-            return element
-
-    return False
+# def _get_file_from_list(file_list, title):
+#     for element in file_list:
+#         if element['title'] == title:
+#             return element
+#
+#     return False
 
 
 def pretty_print_tree(input_tree):

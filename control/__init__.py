@@ -1,6 +1,5 @@
 import os
 import signal
-import logging
 import sys
 
 import control.constants
@@ -11,17 +10,17 @@ from control import tools
 fuse_object = None
 logger = None
 
-def initialise_fuse(mount_point, temp_storage):
+def initialise_fuse(_mount_point, _temp_storage):
     global fuse_object
     # Check if the mount point exists, if not create the folder.
-    if not os.path.exists(mount_point):
-        os.mkdir(mount_point)
+    if not os.path.exists(_mount_point):
+        os.mkdir(_mount_point)
 
-    fuse_object = filesystem.fuse_endpoint.main(mount_point, temp_storage)
+    fuse_object = filesystem.fuse_endpoint.main(_mount_point, _temp_storage)
 
 
 # Tear down method.
-def tear_down(signal=None, frame=None):
+def tear_down(_signal=None, frame=None):
     logger.info("Got SIGTERM/SIGINT")
     # Forward instruction to tear down.
     exit_code = fuse_object.tear_down()

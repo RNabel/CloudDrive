@@ -3,7 +3,8 @@ File that allows up and download of files using the (free) Google Spreadsheets f
 Files are converted to Base64 and up/downloaded as CSV. If the file exceeds the required size,
 the file is split up and uploaded in chunks, which are reconstituted by the downloader.
 
-File chunks are identified through a series of [Custom Properties](https://developers.google.com/drive/v2/web/properties).
+File chunks are identified through a series of
+[Custom Properties](https://developers.google.com/drive/v2/web/properties).
 """
 import base64
 import os
@@ -11,7 +12,6 @@ import fileinput
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-import concurrent.futures
 
 from split_file import getfilesize, splitfile
 import control.constants

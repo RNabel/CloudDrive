@@ -1,27 +1,26 @@
 import strict_rfc3339
 
 import cloud_interface
-from control import tools
 
 
 class FileObject:
-    def __init__(self, gdriveFile=None, file_name=None, parent_id=None, is_folder=False):
+    def __init__(self, gdrive_file=None, file_name=None, parent_id=None, is_folder=False):
         """
 
         Args:
-            gdriveFile: pydrive.files.GoogleDriveFile
+            gdrive_file: pydrive.files.GoogleDriveFile
         """
         # Verify input parameters.
-        if gdriveFile or file_name and parent_id:
-            if gdriveFile:
-                if gdriveFile == 'root':
+        if gdrive_file or file_name and parent_id:
+            if gdrive_file:
+                if gdrive_file == 'root':
                     self.file = {'id': 'root',
                                  'metadata': {
                                      'mimeType': 'application/vnd.google-apps.folder'
                                  }
                                  }
                 else:
-                    self.file = gdriveFile
+                    self.file = gdrive_file
             else:
                 # Create new GDrive object, and Upload it to fill the ID field.
                 params = {
