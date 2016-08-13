@@ -1,11 +1,14 @@
 # Code used to get file system structure from Google Drive account.
 import pprint
 from collections import defaultdict
-import urllib
+import pickle
+import os
 
 from cloud_interface import drive
 import control.constants
 import encryption
+
+metadata_storage_path = control.constants.PROJECT_FOLDER + '/meta_data.txt'
 
 
 # File structure.
@@ -21,26 +24,39 @@ def tree():
 file_tree = tree()
 fcb_dict = dict()  # Map between ID and object.
 fcb_list = None  # List returned by update call.
+last_update = 0
 
 
 # Cloud functions.
+# TODO allow searching AFTER last search.
+# TODO  More info [here](https://developers.google.com/drive/v3/web/search-parameters#examples)
 def update_metadata():
     """
     Sets up or updates global variables with an update of the files stored on GDrive folder.
     Returns:
-        None
+        list
     """
     global fcb_list, fcb_dict
     # Download metadata of all files.
-    fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
+    if os.path.exists(metadata_storage_path):
+        fcb_list = pickle.load(open(metadata_storage_path))
+    else:
+        fcb_list = drive.ListFile({'q': "trashed=false"}).GetList()
+        pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
 
     # Read all files into dictionary.
     fcb_dict = dict()
     for file1 in fcb_list:
         fcb_dict[file1['id']] = file1
 
+    return fcb_list
 
-def _get_children_from_list(parent_id):
+
+def save_metadata():
+    pickle.dump(fcb_list, open(metadata_storage_path, 'w+'))
+
+
+def _get_children_from_list(parent_id, file_list=fcb_list):
     """
     Get all children of given id from file_list object.
     Args:
@@ -51,10 +67,13 @@ def _get_children_from_list(parent_id):
     """
     if parent_id and parent_id != 'root':
         return [x for
-                x in fcb_list
+                x in file_list
                 if parent_id in [y['id'] for y in x['parents']]]
     else:  # If no parent_id specified return all files with root as parent.
-        return [x for x in fcb_list if len(x['parents']) and len([y for y in x['parents'] if y['isRoot'] == True])]
+        return [x for
+                x in file_list
+                if len(x['parents']) and len([y for y in x['parents']
+                         if y['isRoot'] == True])]
 
 
 def _get_folders_from_list(file_list):
@@ -62,27 +81,34 @@ def _get_folders_from_list(file_list):
 
 
 # Conversion.
-def convert_list_to_tree(tree_node, parent_id):
+def convert_list_to_tree(tree_node, file_list, current, parent_directory):
     """
     Recursively create file_tree.
     Args:
         tree_node: The current root node in tree.
-        parent_id: The id of the current root folder.
+        file_list: List of file control block objects.
+        current: The current root folder object.
                    (note: this is not the 'root' folder of GDrive but the
-                      subfolder currently considered top of the file tree.)
+                      sub-folder currently considered top of the file tree.)
+        parent_directory: The object containing the current directory.
 
     Returns:
         None
     """
     # Get children of parents.
-    children = _get_children_from_list(parent_id)
+    current_id = "root" if current == "root" else current["id"]
+    children = _get_children_from_list(current_id, file_list)
+
+    # Set current and parent directory objects.
+    tree_node["parent"] = parent_directory
+    tree_node["self"] = current
 
     for child in children:
         # Add to current tree node.
         if is_folder(child):  # Iterative call if folder.
             # Store reference to folder object in special field.
             tree_node[child['id'] + "_folder"] = child
-            convert_list_to_tree(tree_node[child['id']], child['id'])
+            convert_list_to_tree(tree_node[child['id']], file_list, child, tree_node)
         else:
             tree_node[child['id']] = child
 
@@ -91,14 +117,17 @@ def is_folder(file_object):
     return file_object.metadata['mimeType'] == u"application/vnd.google-apps.folder"
 
 
+def is_file(file_object):
+    return u"application/vnd.google-apps" not in file_object.metadata['mimeType']
+
+
 # Accessor methods.
-# TODO in prog, not finished. needs some testing.
 def get_children(identifier, is_path):
-    # TODO deal with special case root.
+    # TODO check for root special case.
     if is_path and identifier:
         file_object = get_file_from_path(identifier)
         if file_object:
-            folder_children = _get_children_from_list(file_object['id'])  # FIXME crashed after "cd .." command
+            folder_children = _get_children_from_list(file_object['id'])
             return folder_children
         else:
             return []
@@ -149,30 +178,30 @@ def filter_file_list(files, want_folders):
         return [f for f in files if f.metadata['mimeType'] != u'application/vnd.google-apps.folder']
 
 
-def get_titles(file_list):
-    # Deal with possibly encrypted file names.
-    file_names = [f['title'] for f in file_list]
+# def get_titles(file_list):
+#     # Deal with possibly encrypted file names.
+#     file_names = [f['title'] for f in file_list]
+#
+#     # Loop through all names, url-unquote and try to decrypt. If decrypted with simplecrypt, decryption successful,
+#     #   otherwise Exception raised.
+#     out_names = []
+#     for file_name in file_names:
+#         try:
+#             file_name = encryption.decrypt_file_name(file_name)
+#         except:
+#             pass
+#
+#         out_names.append(file_name)
+#
+#     return out_names
 
-    # Loop through all names, url-unquote and try to decrypt. If decrypted with simplecrypt, decryption successful,
-    #   otherwise Exception raised.
-    out_names = []
-    for file_name in file_names:
-        try:
-            file_name = encryption.decrypt_file_name(file_name)
-        except:
-            pass
 
-        out_names.append(file_name)
-
-    return out_names
-
-
-def _get_file_from_list(file_list, title):
-    for element in file_list:
-        if element['title'] == title:
-            return element
-
-    return False
+# def _get_file_from_list(file_list, title):
+#     for element in file_list:
+#         if element['title'] == title:
+#             return element
+#
+#     return False
 
 
 def pretty_print_tree(input_tree):
@@ -192,6 +221,5 @@ def _dicts(t): return {k: _dicts(dict(t[k])) for k in t}
 
 if __name__ == '__main__':
     update_metadata()
-    convert_list_to_tree(file_tree, 'root')
     get_file_object_from_parent('root', 'Documents')
     get_children('/Documents', True)

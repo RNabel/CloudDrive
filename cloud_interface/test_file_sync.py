@@ -1,9 +1,7 @@
-import os
 from unittest import TestCase
 
 from cloud_interface import file_sync
-from control import ENC_FOLDER
-import structure_fetcher
+from cloud_interface.file_tree_navigation import structure_fetcher
 
 
 class TestFileSync(TestCase):

@@ -1,18 +1,23 @@
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+import control.constants
 
-gauth = GoogleAuth()
+# Necessary since tests and experiments are run from different contexts.
+assert control.constants.PROJECT_FOLDER
+
+gauth = GoogleAuth(settings_file=control.constants.PROJECT_FOLDER + '/cloud_interface/settings.yaml')
 # Try to load saved client credentials
-CREDENTIALS = "/home/robin/PycharmProjects/CloudDrive/cloud_interface/mycreds.txt"
+CREDENTIALS = control.constants.PROJECT_FOLDER + control.constants.VALIDATED_CREDENTIAL_FILE
 gauth.LoadCredentialsFile(CREDENTIALS)
+
 if gauth.credentials is None:
-    # Authenticate if they're not there
+    # Authenticate if they're not there.
     gauth.LocalWebserverAuth()
 elif gauth.access_token_expired:
-    # Refresh them if expired
+    # Refresh them if expired.
     gauth.Refresh()
 else:
-    # Initialize the saved creds
+    # Initialize the saved credentials.
     gauth.Authorize()
 # Save the current credentials to a file
 gauth.SaveCredentialsFile(CREDENTIALS)
